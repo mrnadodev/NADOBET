@@ -73,6 +73,11 @@
   input[type=number],input[type=text],input[type=date],select{width:100%;background:var(--panel-2);border:1px solid var(--line);
     border-radius:9px;color:var(--ink);font-family:var(--mono);font-size:15px;padding:11px 13px;outline:none;transition:.15s}
   input:focus,select:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(47,230,168,.12)}
+  input.invalid{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(255,93,108,.12)!important}
+  .calc-invalid{display:flex;align-items:flex-start;gap:9px;background:rgba(255,93,108,.08);
+    border:1px solid rgba(255,93,108,.28);color:var(--red);border-radius:11px;
+    padding:13px 15px;font-size:13px;line-height:1.45}
+  .calc-invalid svg{flex:none;margin-top:1px}
   input::placeholder{color:var(--ink-faint)}
   select{cursor:pointer}
   .seg{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
@@ -166,6 +171,33 @@
   .admin-drawer-head{display:flex;align-items:center;justify-content:space-between;
     padding:15px 16px;border-bottom:1px solid var(--line-soft)}
   .admin-drawer-title{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;color:var(--ink)}
+  .admin-tabs{display:flex;gap:4px}
+  .admin-tab{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;
+    font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink-faint);
+    padding:5px 10px;border-radius:7px;transition:.15s}
+  .admin-tab.on{background:var(--panel);color:var(--ink)}
+  .admin-tab:not(.on):hover{color:var(--ink-dim)}
+  .admin-users{overflow-y:auto;padding:8px}
+  .admin-users-head{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 10px;
+    font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  .user-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;transition:.15s}
+  .user-row:hover{background:var(--panel-2)}
+  .user-row .u-av{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:12px;background:var(--line);color:var(--ink-dim)}
+  .user-row .u-meta{min-width:0;flex:1}
+  .user-row .u-mail{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-row .u-badge{font-size:9.5px;font-family:var(--mono);padding:1px 6px;border-radius:5px;margin-top:2px;display:inline-block}
+  .u-badge.approved{background:rgba(47,230,168,.14);color:var(--mint)}
+  .u-badge.pending{background:rgba(245,197,66,.14);color:var(--gold)}
+  .u-badge.blocked{background:rgba(255,93,108,.14);color:var(--red)}
+  .u-actions{display:flex;gap:5px;flex:none}
+  .u-btn{background:none;border:1px solid var(--line);border-radius:7px;cursor:pointer;
+    font-size:10.5px;font-weight:700;font-family:var(--sans);padding:5px 8px;transition:.15s;white-space:nowrap}
+  .u-btn.ok{color:var(--mint);border-color:rgba(47,230,168,.3)}
+  .u-btn.ok:hover{background:rgba(47,230,168,.12)}
+  .u-btn.block{color:var(--red);border-color:rgba(255,93,108,.3)}
+  .u-btn.block:hover{background:rgba(255,93,108,.1)}
+  .users-empty{text-align:center;color:var(--ink-faint);font-size:11.5px;font-family:var(--mono);padding:20px}
   .live-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:pulse 1.6s infinite}
   .admin-close{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;
     padding:4px 7px;border-radius:7px;transition:.15s}
@@ -186,7 +218,61 @@
     font-size:10px;color:var(--ink-faint);text-align:center;letter-spacing:.02em}
   @media(max-width:640px){.admin-drawer{width:calc(100vw - 44px)}}
   .hist-card{margin-top:22px}
+  .perf-panel{margin-bottom:22px}
+  .perf-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .perf-box{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px}
+  .perf-box .pk{font-size:10.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-faint);margin-bottom:6px}
+  .perf-box .pv{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--ink)}
+  .perf-box .pv .pv-pct{font-size:13px;font-weight:600;opacity:.85}
+  .perf-box .pv.pos{color:var(--mint)}.perf-box .pv.neg{color:var(--red)}
+  .perf-chart-wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:15px 16px 10px}
+  .perf-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .pch-title{font-size:12px;font-weight:600;color:var(--ink-dim);letter-spacing:.02em}
+  .pch-toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px}
+  .pcht{font-family:var(--mono);font-size:11px;font-weight:700;background:none;border:none;color:var(--ink-dim);
+    cursor:pointer;padding:4px 11px;border-radius:6px;transition:.15s}
+  .pcht.on{background:var(--mint);color:var(--bg)}
+  .pcht:not(.on):hover{color:var(--ink)}
+  .pch-legend{font-size:11px;color:var(--ink-faint);display:flex;align-items:center;gap:6px}
+  .pch-legend .dotm{width:9px;height:9px;border-radius:2px;background:var(--mint)}
+  .perf-chart{width:100%}
+  .perf-chart svg{width:100%;height:auto;display:block}
+  .perf-empty{text-align:center;color:var(--ink-faint);font-family:var(--mono);font-size:12px;padding:26px 10px}
+  @media(max-width:640px){.perf-cards{grid-template-columns:1fr 1fr}}
   .hist-wrap{overflow-x:auto}
+  /* États de synchronisation */
+  #syncChip.sync-ok b{color:var(--mint)}
+  #syncChip.sync-busy b{color:var(--gold)}
+  #syncChip.sync-offline{border-color:rgba(255,93,108,.35)}
+  #syncChip.sync-offline b{color:var(--red)}
+  #syncChip.sync-error{border-color:rgba(255,93,108,.35)}
+  #syncChip.sync-error b{color:var(--red)}
+  /* Zone de chargement / hors-ligne dans l'historique */
+  .hist-loader{padding:14px 4px}
+  .hist-loader.loading{display:flex!important;align-items:center;gap:11px;color:var(--ink-dim);
+    font-family:var(--mono);font-size:13px;justify-content:center;padding:32px 0}
+  .hist-loader .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--mint);
+    border-radius:50%;animation:spin .7s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hist-loader.offline,.hist-loader.error{display:flex;align-items:center;gap:14px;
+    background:rgba(255,93,108,.06);border:1px solid rgba(255,93,108,.25);border-radius:12px;padding:16px 18px}
+  .hist-loader .hl-ico{font-size:22px;flex:none}
+  .hist-loader .hl-txt{display:flex;flex-direction:column;gap:2px;flex:1}
+  .hist-loader .hl-txt b{font-size:14px;color:var(--ink)}
+  .hist-loader .hl-txt span{font-size:12px;color:var(--ink-dim)}
+  .hist-loader .hl-retry{flex:none;padding:9px 16px;font-size:13px}
+  /* Bandeau hors-ligne global */
+  .offline-banner{position:fixed;top:0;left:0;right:0;z-index:120;background:var(--red);color:#fff;
+    text-align:center;font-size:13px;font-weight:600;padding:9px 14px;transform:translateY(-100%);
+    transition:transform .25s;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+  .offline-banner.show{transform:translateY(0)}
+  .hist-filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center}
+  .hist-filters .hf-field{flex:1 1 200px;min-width:160px}
+  .hist-filters input[type=text],.hist-filters select,.hist-filters input[type=date]{
+    font-size:13px;padding:9px 11px}
+  .hist-filters select,.hist-filters input[type=date]{flex:0 1 auto;width:auto;min-width:130px}
+  .hist-filtered-note{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin-bottom:10px}
+  .hist-filtered-note b{color:var(--mint)}
   .hist-table{min-width:900px;font-size:12px}
   .hist-table td{color:var(--ink)}
   .hist-table .tag{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;background:var(--line);color:var(--ink-dim)}
@@ -200,6 +286,24 @@
   .stat-sel.pending{color:var(--gold);border-color:rgba(245,197,66,.35)}
   .del-btn{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;padding:4px 6px;border-radius:5px}
   .del-btn:hover{color:var(--red);background:rgba(255,93,108,.1)}
+  .edit-btn{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:5px;margin-left:2px}
+  .edit-btn:hover{color:var(--mint);background:rgba(47,230,168,.1)}
+  /* Modale de modification */
+  .edit-modal{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:20px}
+  .edit-backdrop{position:absolute;inset:0;background:rgba(4,8,10,.72);backdrop-filter:blur(2px)}
+  .edit-box{position:relative;width:100%;max-width:460px;max-height:88vh;overflow:auto;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+    border-radius:16px;box-shadow:0 30px 80px -20px rgba(0,0,0,.75);animation:cardIn .35s cubic-bezier(.16,1,.3,1)}
+  .edit-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;
+    border-bottom:1px solid var(--line-soft);font-size:16px;font-weight:600}
+  .edit-x{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;padding:5px 8px;border-radius:7px}
+  .edit-x:hover{color:var(--red);background:rgba(255,93,108,.1)}
+  .edit-body{padding:20px}
+  .edit-note{font-size:11.5px;color:var(--ink-faint);line-height:1.5;margin-bottom:16px;
+    background:var(--panel-2);border:1px dashed var(--line);border-radius:9px;padding:10px 12px}
+  .edit-bk-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-bottom:10px}
+  .edit-bk-row .lg{font-family:var(--mono);font-size:12px;color:var(--ink-dim);white-space:nowrap}
+  .edit-foot{display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--line-soft)}
   footer{margin-top:30px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
   .off{opacity:.4;pointer-events:none}
 
@@ -269,6 +373,12 @@
 
   .auth-foot{margin-top:20px;padding-top:16px;border-top:1px solid var(--line-soft);
     font-size:11px;color:var(--ink-faint);text-align:center;letter-spacing:.02em}
+  .auth-forgot{text-align:right;margin:-2px 0 14px}
+  .auth-link{background:none;border:none;cursor:pointer;color:var(--ink-dim);font-family:var(--sans);
+    font-size:12px;padding:2px 0;transition:color .15s;text-decoration:none}
+  .auth-link:hover{color:var(--mint);text-decoration:underline}
+  .auth-ok{background:rgba(47,230,168,.1);border:1px solid rgba(47,230,168,.3);color:var(--mint);
+    font-size:12.5px;padding:11px 13px;border-radius:10px;margin-bottom:16px;line-height:1.45}
 
   /* Champs de connexion : fond sombre même en autocomplétion navigateur */
   .auth-card input:-webkit-autofill,
@@ -330,6 +440,8 @@
 </head>
 <body>
 
+<div class="offline-banner" id="offlineBanner">⚠️ Hors ligne — vos changements ne seront pas enregistrés tant que la connexion n'est pas rétablie</div>
+
 <!-- ===== ÉCRAN DE CONNEXION ===== -->
 <div id="authGate" class="auth-gate">
   <div class="auth-card">
@@ -382,6 +494,12 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
     </div>
+
+    <div class="auth-forgot" id="forgotRow">
+      <button type="button" class="auth-link" id="forgotBtn">Mot de passe oublié ?</button>
+    </div>
+
+    <div id="authOk" class="auth-ok" style="display:none"></div>
 
     <button class="auth-submit" id="loginBtn">
       <span id="submitLabel">Se connecter</span>
@@ -512,13 +630,51 @@
         </h2><span class="sub">Sauvegardé automatiquement · fichier Excel central</span></div></div>
       <div class="hist-head-actions">
         <button class="btn ghost" id="exportBtn2" style="padding:9px 16px;font-size:13px">⤓ Excel</button>
-        <button class="btn ghost" id="backupBtn" style="padding:9px 16px;font-size:13px">⇪ Sauvegarde</button>
-        <button class="btn ghost" id="restoreBtn" style="padding:9px 16px;font-size:13px">⇩ Restaurer</button>
-        <button class="btn ghost" id="clearBtn" style="padding:9px 16px;font-size:13px">Vider</button>
-        <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
+        <span id="adminHistBtns" style="display:none;gap:10px;align-items:center">
+          <button class="btn ghost" id="backupBtn" style="padding:9px 16px;font-size:13px">⇪ Sauvegarde</button>
+          <button class="btn ghost" id="restoreBtn" style="padding:9px 16px;font-size:13px">⇩ Restaurer</button>
+          <button class="btn ghost" id="clearBtn" style="padding:9px 16px;font-size:13px">Vider</button>
+          <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
+        </span>
       </div>
     </div>
     <div class="card-body">
+      <div id="perfPanel" class="perf-panel">
+        <div class="perf-cards">
+          <div class="perf-box"><div class="pk">Total misé</div><div class="pv" id="pfStaked">—</div></div>
+          <div class="perf-box"><div class="pk">Profit réalisé</div><div class="pv" id="pfProfit">—</div></div>
+          <div class="perf-box"><div class="pk">En attente</div><div class="pv" id="pfPending">—</div></div>
+          <div class="perf-box"><div class="pk">Taux de réussite</div><div class="pv" id="pfWinrate">—</div></div>
+        </div>
+        <div class="perf-chart-wrap">
+          <div class="perf-chart-head">
+            <span class="pch-title">Profit cumulé</span>
+            <div class="pch-toggle" id="chartToggle">
+              <button class="pcht on" data-unit="htg">HTG</button>
+              <button class="pcht" data-unit="pct">%</button>
+            </div>
+          </div>
+          <div id="perfChart" class="perf-chart"></div>
+        </div>
+      </div>
+
+      <div class="hist-filters" id="histFilters">
+        <div class="hf-field">
+          <input type="text" id="filterSearch" placeholder="🔍 Rechercher (match, bookmaker…)">
+        </div>
+        <select id="filterBk"><option value="">Tous bookmakers</option></select>
+        <select id="filterStatus">
+          <option value="">Tous statuts</option>
+          <option value="pending">En attente</option>
+          <option value="won">Gagné</option>
+          <option value="lost">Perdu</option>
+        </select>
+        <input type="date" id="filterFrom" title="Date de début">
+        <input type="date" id="filterTo" title="Date de fin">
+        <button class="btn ghost" id="filterClear" style="padding:9px 14px;font-size:12.5px">Réinitialiser</button>
+      </div>
+
+      <div id="histLoader" class="hist-loader" style="display:none"></div>
       <div class="hist-wrap">
         <table class="hist-table"><thead><tr>
           <th>Date</th><th>Matchs</th><th>Issues</th><th>Mode</th>
@@ -535,6 +691,36 @@
 
 <div class="toast" id="toast">Pari enregistré ✓</div>
 
+<!-- ===== MODALE DE MODIFICATION ===== -->
+<div id="editModal" class="edit-modal" style="display:none">
+  <div class="edit-backdrop" id="editBackdrop"></div>
+  <div class="edit-box">
+    <div class="edit-head">
+      <span>Modifier le pari</span>
+      <button class="edit-x" id="editClose" aria-label="Fermer">✕</button>
+    </div>
+    <div class="edit-body">
+      <p class="edit-note">Vous pouvez corriger les informations descriptives. Les cotes et mises ne sont pas modifiables ici, pour préserver l'exactitude du bilan — supprimez et re-saisissez le pari si une cote est erronée.</p>
+      <div class="row r2" style="margin-bottom:12px">
+        <label class="fld" style="margin:0"><span class="lab">Match / Événement 1</span><input type="text" id="editMatch1"></label>
+        <label class="fld" style="margin:0"><span class="lab">Match / Événement 2</span><input type="text" id="editMatch2"></label>
+      </div>
+      <label class="fld"><span class="lab">Date du pari</span><input type="date" id="editDate"></label>
+      <div id="editBkFields"></div>
+      <label class="fld"><span class="lab">Statut</span>
+        <select id="editStatus">
+          <option value="pending">En attente</option>
+          <option value="won">Gagné</option>
+          <option value="lost">Perdu</option>
+        </select></label>
+    </div>
+    <div class="edit-foot">
+      <button class="btn ghost" id="editCancel">Annuler</button>
+      <button class="btn primary" id="editSave">Enregistrer les modifications</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== PANNEAU ADMIN : QUI EST EN LIGNE (visible admin uniquement) ===== -->
 <div id="adminPanel" class="admin-panel" style="display:none">
   <button class="admin-fab" id="adminFab" title="Qui est en ligne">
@@ -543,13 +729,21 @@
   </button>
   <div class="admin-drawer" id="adminDrawer">
     <div class="admin-drawer-head">
-      <div class="admin-drawer-title">
-        <span class="live-dot"></span> En ligne maintenant
+      <div class="admin-tabs">
+        <button class="admin-tab on" data-atab="online"><span class="live-dot"></span> En ligne</button>
+        <button class="admin-tab" data-atab="users">Utilisateurs</button>
       </div>
       <button class="admin-close" id="adminClose" aria-label="Fermer">✕</button>
     </div>
     <div class="admin-list" id="adminList"></div>
-    <div class="admin-foot">Vue administrateur · présence en temps réel</div>
+    <div class="admin-users" id="adminUsers" style="display:none">
+      <div class="admin-users-head">
+        <span id="usersSummary">—</span>
+        <button class="btn ghost" id="usersRefresh" style="padding:5px 11px;font-size:11px">↻ Actualiser</button>
+      </div>
+      <div id="usersList"></div>
+    </div>
+    <div class="admin-foot" id="adminFoot">Vue administrateur · présence en temps réel</div>
   </div>
 </div>
 
@@ -557,6 +751,7 @@
 (function(){
   const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
   const money=n=>n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const htg=n=>money(n)+' HTG';
   const BOOKMAKERS=['Golcash','Paryaj Pam','Paryaj Lakay','1xBet','LineBet','MelBet','Lisalotto','LotoMobil','BelParyaj','Beltifich'];
   const bkOptions=BOOKMAKERS.map(b=>`<option value="${b}">${b}</option>`).join('');
 
@@ -578,51 +773,79 @@
     catch(e){ $('#configWarn').style.display='block'; return false; }
   }
 
-  function setSync(state){
+  // États : 'ok' (synchronisé), 'busy' (chargement/envoi), 'offline', 'error'
+  function setSync(state, kind){
     const c=$('#syncChip'); if(!currentUser){c.style.display='none';return;}
-    c.style.display='';$('#syncState').textContent=state;
+    c.style.display='';
+    $('#syncState').textContent=state;
+    c.classList.remove('sync-ok','sync-busy','sync-offline','sync-error');
+    c.classList.add('sync-'+(kind||'ok'));
   }
+  function isOnline(){ return navigator.onLine!==false; }
 
   // Charge les paris de l'utilisateur connecté depuis Supabase
+  let loadFailed=false;
   async function loadHistory(){
     if(!sb||!currentUser){history=[];return;}
-    setSync('Chargement…');
-    const {data,error}=await sb.from('bets').select('*').order('created_at',{ascending:true});
-    if(error){setSync('Erreur');console.error(error);history=[];return;}
-    history=(data||[]).map(row=>row.payload ? {...row.payload, id:row.id} : row);
-    setSync('Synchronisé');
+    if(!isOnline()){ loadFailed=true; setSync('Hors ligne','offline'); showHistLoader('offline'); return; }
+    loadFailed=false;
+    setSync('Chargement…','busy'); showHistLoader('loading');
+    try{
+      const {data,error}=await sb.from('bets').select('*').order('created_at',{ascending:true});
+      if(error) throw error;
+      history=(data||[]).map(row=>row.payload ? {...row.payload, id:row.id} : row);
+      setSync('Synchronisé','ok'); clearHistLoader();
+    }catch(err){
+      loadFailed=true; console.error(err);
+      setSync(isOnline()?'Erreur de chargement':'Hors ligne', isOnline()?'error':'offline');
+      showHistLoader(isOnline()?'error':'offline');
+    }
   }
+  async function retryLoad(){ await loadHistory(); if(!loadFailed) renderHistory(); }
 
   // Ajoute un pari
   async function dbInsert(rec){
     if(!sb||!currentUser)return;
-    setSync('Envoi…');
-    const {data,error}=await sb.from('bets')
-      .insert({user_id:currentUser.id, payload:rec, status:rec.status})
-      .select().single();
-    if(error){setSync('Erreur');console.error(error);return;}
-    // remplace l'id local par l'id de la base
-    const idx=history.findIndex(h=>h.id===rec.id);
-    if(idx>=0)history[idx].id=data.id;
-    setSync('Synchronisé');
+    if(!isOnline()){ setSync('Hors ligne · non enregistré','offline'); showToast('Hors ligne : le pari sera perdu si vous quittez. Reconnectez-vous puis ré-enregistrez.',true); return; }
+    setSync('Envoi…','busy');
+    try{
+      const {data,error}=await sb.from('bets')
+        .insert({user_id:currentUser.id, payload:rec, status:rec.status})
+        .select().single();
+      if(error) throw error;
+      const idx=history.findIndex(h=>h.id===rec.id);
+      if(idx>=0)history[idx].id=data.id;
+      setSync('Synchronisé','ok');
+    }catch(err){ console.error(err); setSync('Échec de l’envoi','error'); showToast('Échec de l’enregistrement en ligne. Vérifiez votre connexion.',true); }
   }
 
   // Met à jour le statut d'un pari
   async function dbUpdateStatus(id,status){
     if(!sb||!currentUser)return;
-    setSync('Mise à jour…');
+    if(!isOnline()){ setSync('Hors ligne','offline'); return; }
+    setSync('Mise à jour…','busy');
     const rec=history.find(h=>h.id===id);
     const payload=rec?{...rec}:null; if(payload)payload.status=status;
-    const {error}=await sb.from('bets').update({status, payload}).eq('id',id);
-    setSync(error?'Erreur':'Synchronisé');
+    try{ const {error}=await sb.from('bets').update({status, payload}).eq('id',id); if(error)throw error; setSync('Synchronisé','ok'); }
+    catch(err){ console.error(err); setSync('Échec de mise à jour','error'); }
+  }
+
+  // Met à jour un pari modifié (infos descriptives + statut)
+  async function dbUpdateRecord(rec){
+    if(!sb||!currentUser)return;
+    if(!isOnline()){ setSync('Hors ligne','offline'); return; }
+    setSync('Mise à jour…','busy');
+    try{ const {error}=await sb.from('bets').update({status:rec.status, payload:{...rec}}).eq('id',rec.id); if(error)throw error; setSync('Synchronisé','ok'); }
+    catch(err){ console.error(err); setSync('Échec de mise à jour','error'); }
   }
 
   // Supprime un pari
   async function dbDelete(id){
     if(!sb||!currentUser)return;
-    setSync('Suppression…');
-    const {error}=await sb.from('bets').delete().eq('id',id);
-    setSync(error?'Erreur':'Synchronisé');
+    if(!isOnline()){ setSync('Hors ligne','offline'); return; }
+    setSync('Suppression…','busy');
+    try{ const {error}=await sb.from('bets').delete().eq('id',id); if(error)throw error; setSync('Synchronisé','ok'); }
+    catch(err){ console.error(err); setSync('Échec de suppression','error'); }
   }
 
   // Vide tout l'historique de l'utilisateur
@@ -699,11 +922,44 @@
   function getOdds(){return $$('.calcOdd').map(el=>parseFloat(el.value)||0);}
   function getBks(){return $$('.calcBk').map(el=>el.value);}
 
+  // Valide les saisies : renvoie {ok, msg, badOdds:[indices], badAmount:bool}
+  function validateInputs(){
+    const oddInputs=$$('.calcOdd');
+    const rawOdds=oddInputs.map(el=>el.value.trim());
+    const odds=rawOdds.map(v=>parseFloat(v));
+    const badOdds=[];
+    odds.forEach((o,i)=>{
+      const raw=rawOdds[i];
+      if(raw===''||isNaN(o)||o<=1||o>1000) badOdds.push(i);
+    });
+    const amountRaw=$('#amount').value.trim();
+    const amount=parseFloat(amountRaw);
+    const badAmount = amountRaw===''||isNaN(amount)||amount<=0;
+
+    // Applique le surlignage visuel
+    oddInputs.forEach((el,i)=>el.classList.toggle('invalid',badOdds.includes(i)));
+    $('#amount').classList.toggle('invalid',badAmount);
+
+    if(badOdds.length){
+      const which=badOdds.map(i=>i+1).join(', ');
+      return {ok:false, msg:'Cote '+which+' invalide : entrez un nombre supérieur à 1 (ex. 2.10).'};
+    }
+    if(badAmount){
+      const label = mode==='equal' ? 'le montant total' : 'la mise fixe';
+      return {ok:false, msg:'Montant invalide : entrez '+label+' (un nombre supérieur à 0).'};
+    }
+    return {ok:true};
+  }
+
   let lastCalc=null;
   function renderCalc(){
     syncCalcUI();
+    const v=validateInputs();
+    if(!v.ok){
+      $('#calcOut').innerHTML='<div class="calc-invalid"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span>'+v.msg+'</span></div>';
+      lastCalc=null;$('#saveBtn').disabled=true;return;
+    }
     const odds=getOdds();
-    if(odds.length<legs||odds.some(o=>o<=1)){$('#calcOut').innerHTML='<div class="verdict lose"><div><div class="vlab">Cotes invalides</div></div></div>';lastCalc=null;$('#saveBtn').disabled=true;return;}
     const S=odds.reduce((s,o)=>s+1/o,0);const isSure=S<1;const amount=parseFloat($('#amount').value)||0;
     let stakes=[],total=0;
     if(mode==='equal'){total=amount;stakes=odds.map(o=>total*(1/o)/S);}
@@ -733,11 +989,83 @@
 
   /* ---- HISTORIQUE + EXCEL ---- */
   function fmtDate(v){return v||new Date().toISOString().slice(0,10);}
+
+  // Affiche un état (chargement / hors-ligne / erreur) dans la zone historique
+  function showHistLoader(kind){
+    const el=$('#histLoader'); if(!el)return;
+    $('#histFilters').style.display='none';
+    $('#histEmpty').style.display='none';
+    $('#histBody').innerHTML='';
+    el.style.display='block';
+    if(kind==='loading'){
+      el.className='hist-loader loading';
+      el.innerHTML='<span class="spin"></span><span>Chargement de vos paris…</span>';
+    }else if(kind==='offline'){
+      el.className='hist-loader offline';
+      el.innerHTML='<div class="hl-ico">⚠️</div><div class="hl-txt"><b>Connexion perdue</b><span>Impossible de charger vos paris hors ligne.</span></div><button class="btn ghost hl-retry" id="histRetry">Réessayer</button>';
+      const r=$('#histRetry'); if(r)r.addEventListener('click',retryLoad);
+    }else if(kind==='error'){
+      el.className='hist-loader error';
+      el.innerHTML='<div class="hl-ico">⚠️</div><div class="hl-txt"><b>Échec du chargement</b><span>Un problème est survenu. Vérifiez votre connexion et réessayez.</span></div><button class="btn ghost hl-retry" id="histRetry">Réessayer</button>';
+      const r=$('#histRetry'); if(r)r.addEventListener('click',retryLoad);
+    }
+  }
+  function clearHistLoader(){ const el=$('#histLoader'); if(el){el.style.display='none';el.innerHTML='';} }
+
+  // Rassemble la liste des bookmakers présents dans l'historique pour le filtre
+  function refreshBookmakerFilter(){
+    const sel=$('#filterBk'); if(!sel)return;
+    const cur=sel.value;
+    const set=new Set();
+    history.forEach(h=>(h.bks||[]).forEach(b=>b&&set.add(b)));
+    const opts=['<option value="">Tous bookmakers</option>']
+      .concat(Array.from(set).sort().map(b=>`<option value="${b}">${b}</option>`));
+    sel.innerHTML=opts.join('');
+    if(Array.from(set).includes(cur))sel.value=cur;
+  }
+
+  function applyFilters(list){
+    const q=($('#filterSearch').value||'').trim().toLowerCase();
+    const bk=$('#filterBk').value;
+    const st=$('#filterStatus').value;
+    const from=$('#filterFrom').value;
+    const to=$('#filterTo').value;
+    return list.filter(h=>{
+      if(bk && !(h.bks||[]).includes(bk)) return false;
+      if(st && (h.status||'pending')!==st) return false;
+      if(from && (h.date||'')<from) return false;
+      if(to && (h.date||'')>to) return false;
+      if(q){
+        const hay=[h.match1,h.match2,(h.bks||[]).join(' '),h.date,h.mode].join(' ').toLowerCase();
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
   function renderHistory(){
+    if(loadFailed){ return; }
+    clearHistLoader();
     $('#countChip').textContent=history.length;
+    refreshBookmakerFilter();
     const body=$('#histBody');body.innerHTML='';
+    const filtered=applyFilters(history);
+    const isFiltered=filtered.length!==history.length;
     $('#histEmpty').style.display=history.length?'none':'block';
-    history.slice().reverse().forEach(h=>{
+    $('#histFilters').style.display=history.length?'flex':'none';
+
+    // note de filtrage
+    let note=$('#histFilterNote');
+    if(!note){note=document.createElement('div');note.id='histFilterNote';note.className='hist-filtered-note';
+      $('#histFilters').insertAdjacentElement('afterend',note);}
+    note.style.display=isFiltered?'block':'none';
+    note.innerHTML=isFiltered?`<b>${filtered.length}</b> pari(s) affiché(s) sur ${history.length} · <span style="color:var(--ink-dim)">filtre actif</span>`:'';
+
+    if(history.length && !filtered.length){
+      body.innerHTML='<tr><td colspan="13" style="text-align:center;color:var(--ink-faint);padding:22px;font-family:var(--mono)">Aucun pari ne correspond au filtre.</td></tr>';
+    }
+
+    filtered.slice().reverse().forEach(h=>{
       const st=h.status||'pending';
       const tr=document.createElement('tr');
       tr.innerHTML=`<td>${h.date}</td>
@@ -755,6 +1083,7 @@
             <option value="won"${st==='won'?' selected':''}>Gagné</option>
             <option value="lost"${st==='lost'?' selected':''}>Perdu</option>
           </select>
+          <button class="edit-btn" data-edit="${h.id}" title="Modifier">✎</button>
           <button class="del-btn" data-del="${h.id}" title="Supprimer">✕</button>
         </td>`;
       body.appendChild(tr);
@@ -763,12 +1092,147 @@
       const id=e.target.dataset.id;const rec=history.find(x=>x.id===id);
       if(rec){rec.status=e.target.value;renderHistory();dbUpdateStatus(id,e.target.value);}
     }));
+    $$('.edit-btn').forEach(b=>b.addEventListener('click',e=>openEdit(e.target.dataset.edit)));
     $$('.del-btn').forEach(b=>b.addEventListener('click',e=>{
       const id=e.target.dataset.del;history=history.filter(x=>x.id!==id);renderHistory();dbDelete(id);
     }));
+    renderPerformance();
+  }
+
+  /* ---- MODIFICATION D'UN PARI (ciblée) ---- */
+  let editId=null;
+  function openEdit(id){
+    const h=history.find(x=>x.id===id); if(!h)return;
+    editId=id;
+    $('#editMatch1').value=h.match1||'';
+    $('#editMatch2').value=h.match2||'';
+    $('#editDate').value=h.date||'';
+    $('#editStatus').value=h.status||'pending';
+    // champs bookmaker par issue
+    const bkHtml=(h.bks||[]).map((b,i)=>`<div class="edit-bk-row">
+      <span class="lg">Issue ${i+1} · cote ${(h.odds[i]!=null?h.odds[i].toFixed(2):'—')}</span>
+      <select class="editBk" data-i="${i}">${bkOptions}</select></div>`).join('');
+    $('#editBkFields').innerHTML=`<span class="lab" style="display:block;margin-bottom:7px">Bookmakers</span>${bkHtml}`;
+    $$('.editBk').forEach((sel,i)=>{ const v=(h.bks||[])[i]; if(v){ if(![...sel.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);} sel.value=v; } });
+    $('#editModal').style.display='flex';
+  }
+  function closeEdit(){ $('#editModal').style.display='none'; editId=null; }
+  function saveEdit(){
+    const h=history.find(x=>x.id===editId); if(!h){closeEdit();return;}
+    h.match1=($('#editMatch1').value||'').trim();
+    h.match2=($('#editMatch2').value||'').trim();
+    h.date=$('#editDate').value||h.date;
+    h.status=$('#editStatus').value;
+    h.bks=$$('.editBk').map(s=>s.value);
+    renderHistory();
+    dbUpdateRecord(h);
+    showToast('Pari modifié ✓');
+    closeEdit();
+  }
+  $('#editClose').addEventListener('click',closeEdit);
+  $('#editCancel').addEventListener('click',closeEdit);
+  $('#editBackdrop').addEventListener('click',closeEdit);
+  $('#editSave').addEventListener('click',saveEdit);
+
+  /* ---- FILTRES HISTORIQUE ---- */
+  ['#filterSearch','#filterBk','#filterStatus','#filterFrom','#filterTo'].forEach(s=>{
+    const el=$(s); if(el)el.addEventListener('input',renderHistory);
+  });
+  $('#filterClear').addEventListener('click',()=>{
+    $('#filterSearch').value='';$('#filterBk').value='';$('#filterStatus').value='';
+    $('#filterFrom').value='';$('#filterTo').value='';renderHistory();
+  });
+
+  /* ---- BILAN DE PERFORMANCE + GRAPHIQUE ---- */
+  function computeProfit(h){
+    // Un pari surebet gagne le même montant quel que soit le résultat -> h.profit est le gain garanti.
+    // Réglé "gagné" = on encaisse le profit ; "perdu" (rare, erreur de placement) = on perd la mise nette.
+    if((h.status||'pending')==='won') return h.profit;
+    if(h.status==='lost') return -Math.abs(h.total - h.guaranteedReturn || h.total);
+    return 0; // en attente : non réalisé
+  }
+  function renderPerformance(){
+    const staked=history.reduce((s,h)=>s+(h.total||0),0);
+    const settled=history.filter(h=>h.status==='won'||h.status==='lost');
+    const realized=settled.reduce((s,h)=>s+computeProfit(h),0);
+    const settledStake=settled.reduce((s,h)=>s+(h.total||0),0);
+    const realizedPct=settledStake>0?(realized/settledStake*100):0;
+    const pending=history.filter(h=>(h.status||'pending')==='pending').length;
+    const wins=history.filter(h=>h.status==='won').length;
+    const winrate=settled.length?(wins/settled.length*100):0;
+
+    $('#pfStaked').textContent=htg(staked);
+    const pe=$('#pfProfit');
+    const pctTxt = settled.length ? ' · '+(realizedPct>=0?'+':'')+realizedPct.toFixed(2)+'%' : '';
+    pe.innerHTML=(realized>=0?'+':'')+htg(realized)+'<span class="pv-pct">'+pctTxt+'</span>';
+    pe.className='pv '+(realized>0?'pos':realized<0?'neg':'');
+    $('#pfPending').textContent=pending;
+    $('#pfWinrate').textContent=settled.length?winrate.toFixed(0)+'%':'—';
+
+    drawProfitChart();
+  }
+
+  let chartUnit='htg';
+  function drawProfitChart(){
+    const el=$('#perfChart');
+    // Série = profit cumulé sur les paris réglés, dans l'ordre chronologique
+    const settled=history
+      .filter(h=>h.status==='won'||h.status==='lost')
+      .slice()
+      .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    if(settled.length<1){
+      el.innerHTML='<div class="perf-empty">Le graphique apparaîtra dès qu’un pari sera marqué « gagné » ou « perdu ».</div>';
+      return;
+    }
+    // cumul du profit ET de la mise, pour pouvoir exprimer en HTG ou en %
+    let cumP=0, cumS=0;
+    const pts=settled.map((h,i)=>{
+      cumP+=computeProfit(h); cumS+=(h.total||0);
+      const yHtg=cumP;
+      const yPct=cumS>0?(cumP/cumS*100):0;
+      return {x:i, htg:yHtg, pct:yPct, date:h.date};
+    });
+    const isPct = chartUnit==='pct';
+    const val = p => isPct ? p.pct : p.htg;
+    const fmt = v => isPct ? ((v>=0?'+':'')+v.toFixed(2)+'%') : ((v>=0?'+':'')+money(v)+' HTG');
+    const fmtAxis = v => isPct ? (Math.round(v)+'%') : ((v>=0?'+':'')+Math.round(v));
+
+    const W=680, H=200, padL=isPct?46:64, padR=16, padT=16, padB=28;
+    const n=pts.length;
+    const ys=pts.map(val).concat([0]);
+    let minY=Math.min(...ys), maxY=Math.max(...ys);
+    if(minY===maxY){minY-=1;maxY+=1;}
+    const spanY=maxY-minY||1;
+    const px=i=> n===1 ? (padL+(W-padL-padR)/2) : padL + (W-padL-padR)*i/(n-1);
+    const py=v=> padT + (H-padT-padB)*(1-(v-minY)/spanY);
+    const zeroY=py(0);
+
+    const line=pts.map((p,i)=>(i?'L':'M')+px(i).toFixed(1)+' '+py(val(p)).toFixed(1)).join(' ');
+    const area=line+' L'+px(n-1).toFixed(1)+' '+zeroY.toFixed(1)+' L'+px(0).toFixed(1)+' '+zeroY.toFixed(1)+' Z';
+
+    const ticks=[maxY,(maxY+minY)/2,minY];
+    const grid=ticks.map(t=>{
+      const y=py(t).toFixed(1);
+      return `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--line-soft)" stroke-width="1"/>
+        <text x="${padL-8}" y="${(+y+4)}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-faint)">${fmtAxis(t)}</text>`;
+    }).join('');
+
+    const dots=pts.map((p,i)=>`<circle cx="${px(i).toFixed(1)}" cy="${py(val(p)).toFixed(1)}" r="3"
+      fill="${val(p)>=0?'var(--mint)':'var(--red)'}"><title>${p.date} · ${fmt(val(p))}</title></circle>`).join('');
+
+    const lastPos=val(pts[n-1])>=0;
+    el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du profit cumulé (${isPct?'pourcentage':'HTG'})">
+      ${grid}
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="3 3"/>
+      <path d="${area}" fill="${lastPos?'rgba(47,230,168,.12)':'rgba(255,93,108,.10)'}"/>
+      <path d="${line}" fill="none" stroke="${lastPos?'var(--mint)':'var(--red)'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+    </svg>`;
   }
 
   function saveBet(){
+    const v=validateInputs();
+    if(!v.ok){ showToast(v.msg,true); renderCalc(); return; }
     if(!lastCalc)return;
     const rec={
       id:'b'+Date.now()+Math.random().toString(36).slice(2,6),
@@ -894,20 +1358,84 @@
   $('#restoreBtn').addEventListener('click',()=>$('#restoreFile').click());
   $('#restoreFile').addEventListener('change',e=>{if(e.target.files[0]){backupRestore(e.target.files[0]);e.target.value='';}});
   $('#histEye').addEventListener('click',toggleHistory);
+  $$('#chartToggle .pcht').forEach(b=>b.addEventListener('click',()=>{
+    $$('#chartToggle .pcht').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); chartUnit=b.dataset.unit; drawProfitChart();
+  }));
   $('#resetBtn').addEventListener('click',resetForm);
   $('#clearBtn').addEventListener('click',()=>{if(history.length&&confirm('Vider tout cet historique ? (supprime aussi côté cloud)')){history=[];renderHistory();dbClearAll();}});
 
   /* ===== AUTHENTIFICATION ===== */
-  function authError(msg){const e=$('#authError');e.style.display='block';e.textContent=msg;}
-  function clearAuthError(){$('#authError').style.display='none';}
+  function authError(msg){const e=$('#authError');e.style.display='block';e.textContent=msg;$('#authOk').style.display='none';}
+  function authOk(msg){const e=$('#authOk');e.style.display='block';e.textContent=msg;$('#authError').style.display='none';}
+  function clearAuthError(){$('#authError').style.display='none';$('#authOk').style.display='none';}
 
   function showGate(){$('#authGate').classList.remove('hidden');
     $('#userChip').style.display='none';$('#logoutBtn').style.display='none';$('#syncChip').style.display='none';}
+  // Vérifie le statut du compte (approuvé / en attente / bloqué)
+  async function fetchAccountStatus(user){
+    // L'admin est toujours autorisé, sans dépendre de la table
+    if(isAdmin(user)) return 'approved';
+    try{
+      const {data,error}=await sb.from('profiles').select('status').eq('id',user.id).single();
+      if(error){
+        // Profil pas encore créé : on tente de le créer en "pending"
+        if(error.code==='PGRST116'||/no rows/i.test(error.message||'')){
+          await sb.from('profiles').insert({id:user.id, email:user.email, status:'pending'});
+          return 'pending';
+        }
+        console.error(error); return 'pending';
+      }
+      return (data&&data.status)||'pending';
+    }catch(e){ console.error(e); return 'pending'; }
+  }
+
+  function showAccessScreen(kind, email){
+    // kind: 'pending' | 'blocked'
+    $('#authGate').classList.remove('hidden');
+    $('#authTabs').style.display='none';
+    $('#forgotRow') && ($('#forgotRow').style.display='none');
+    document.querySelectorAll('.auth-field').forEach(f=>f.style.display='none');
+    $('#loginBtn').style.display='none';
+    const sub=$('#authSub');
+    const ok=$('#authOk'), err=$('#authError');
+    clearAuthError();
+    if(kind==='pending'){
+      sub.textContent='Compte en attente d’approbation';
+      authOk('Votre inscription ('+email+') a bien été reçue. Un administrateur doit l’approuver avant que vous puissiez accéder. Réessayez plus tard.');
+    }else{
+      sub.textContent='Accès bloqué';
+      authError('Votre compte ('+email+') n’est pas autorisé à accéder pour le moment. Contactez l’administrateur.');
+    }
+    // bouton de déconnexion pour réessayer avec un autre compte
+    let back=$('#accessLogout');
+    if(!back){ back=document.createElement('button'); back.id='accessLogout';
+      back.className='btn ghost'; back.style.cssText='width:100%;justify-content:center;margin-top:14px';
+      back.textContent='Se déconnecter'; $('#authError').insertAdjacentElement('afterend',back);
+      back.addEventListener('click',async()=>{ await doLogout(); restoreAuthForm(); });
+    }
+    back.style.display='';
+  }
+  function restoreAuthForm(){
+    $('#authTabs').style.display='';
+    $('#forgotRow') && ($('#forgotRow').style.display='');
+    document.querySelectorAll('.auth-field').forEach(f=>f.style.display='');
+    $('#loginBtn').style.display='';
+    const back=$('#accessLogout'); if(back)back.style.display='none';
+    $('#authSub').textContent='Vos paris, synchronisés et sécurisés';
+  }
+
   async function enterApp(user){
     currentUser=user;
+    // Contrôle d'accès : approbation / blocage
+    const status=await fetchAccountStatus(user);
+    if(status==='pending'){ showAccessScreen('pending',user.email); currentUser=null; return; }
+    if(status==='blocked'){ showAccessScreen('blocked',user.email); currentUser=null; return; }
+    restoreAuthForm();
     $('#authGate').classList.add('hidden');
     $('#userChip').style.display='';$('#userEmail').textContent=user.email;
     $('#logoutBtn').style.display='';
+    $('#adminHistBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
     await loadHistory();
     renderHistory();
     startPresence(user);
@@ -982,7 +1510,48 @@
     await stopPresence();
     if(sb)await sb.auth.signOut();
     currentUser=null;history=[];renderHistory();showGate();
+    $('#adminHistBtns').style.display='none';
     $('#authEmail').value='';$('#authPass').value='';clearAuthError();
+  }
+
+  // Mot de passe oublié : envoie l'email de réinitialisation
+  async function doForgot(){
+    if(!sb)return authError('Configuration Supabase manquante.');
+    clearAuthError();
+    const email=$('#authEmail').value.trim();
+    if(!email)return authError('Entrez d’abord votre adresse email ci-dessus, puis cliquez « Mot de passe oublié ».');
+    const redirectTo = window.location.origin + window.location.pathname;
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error)return authError('Envoi impossible : '+error.message);
+    authOk('Email envoyé à '+email+'. Ouvrez le lien reçu pour choisir un nouveau mot de passe.');
+  }
+
+  // L'utilisateur revient via le lien de réinitialisation : bascule en mode "nouveau mot de passe"
+  let recoveryMode=false;
+  function enterRecoveryMode(){
+    recoveryMode=true;
+    $('#authGate').classList.remove('hidden');
+    $('#authTabs').style.display='none';
+    $('#forgotRow').style.display='none';
+    $('#authEmail').closest('.auth-field').style.display='none';
+    $('#authPass').setAttribute('placeholder','Nouveau mot de passe');
+    $('#authPass').setAttribute('autocomplete','new-password');
+    $('#submitLabel').textContent='Définir le mot de passe';
+    $('#authSub').textContent='Choisissez un nouveau mot de passe';
+    clearAuthError();
+  }
+  async function doUpdatePassword(){
+    if(!sb)return authError('Configuration Supabase manquante.');
+    const pass=$('#authPass').value;
+    if(!pass||pass.length<6)return authError('Le mot de passe doit contenir au moins 6 caractères.');
+    const {data,error}=await sb.auth.updateUser({password:pass});
+    if(error)return authError('Échec : '+error.message);
+    recoveryMode=false;
+    // nettoie les paramètres de l'URL et entre dans l'app
+    try{window.history.replaceState({},document.title,window.location.pathname);}catch(e){}
+    $('#authTabs').style.display='';$('#forgotRow').style.display='';
+    $('#authEmail').closest('.auth-field').style.display='';
+    if(data&&data.user)enterApp(data.user);
   }
 
   // Onglets Connexion / Créer un compte
@@ -993,11 +1562,16 @@
     $$('.auth-tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===m));
     $('#submitLabel').textContent = m==='login' ? 'Se connecter' : 'Créer mon compte';
     $('#authPass').setAttribute('autocomplete', m==='login'?'current-password':'new-password');
+    $('#forgotRow').style.display = m==='login' ? 'block' : 'none';
     clearAuthError();
   }
   $$('.auth-tab').forEach(t=>t.addEventListener('click',()=>setAuthMode(t.dataset.tab)));
 
-  function submitAuth(){ authMode==='login' ? doLogin() : doSignup(); }
+  function submitAuth(){
+    if(recoveryMode) return doUpdatePassword();
+    authMode==='login' ? doLogin() : doSignup();
+  }
+  $('#forgotBtn').addEventListener('click',doForgot);
 
   // Afficher / masquer le mot de passe
   $('#pwToggle').addEventListener('click',()=>{
@@ -1015,11 +1589,90 @@
   // Panneau admin : ouvrir / fermer
   $('#adminFab').addEventListener('click',()=>{
     const d=$('#adminDrawer'); const open=d.classList.toggle('open');
-    if(open)renderPresence();
+    if(open){ if(adminTab==='users') loadUsers(); else renderPresence(); }
   });
   $('#adminClose').addEventListener('click',()=>$('#adminDrawer').classList.remove('open'));
 
+  // Onglets du panneau admin (En ligne / Utilisateurs)
+  let adminTab='online';
+  $$('.admin-tab').forEach(t=>t.addEventListener('click',()=>{
+    adminTab=t.dataset.atab;
+    $$('.admin-tab').forEach(x=>x.classList.toggle('on',x===t));
+    const online=adminTab==='online';
+    $('#adminList').style.display=online?'':'none';
+    $('#adminUsers').style.display=online?'none':'block';
+    $('#adminFoot').textContent=online?'Vue administrateur · présence en temps réel':'Vue administrateur · gestion des accès';
+    if(online) renderPresence(); else loadUsers();
+  }));
+  $('#usersRefresh').addEventListener('click',loadUsers);
+
+  // Charge la liste des utilisateurs (table profiles)
+  async function loadUsers(){
+    if(!sb||!isAdmin(currentUser))return;
+    const list=$('#usersList');
+    list.innerHTML='<div class="users-empty">Chargement…</div>';
+    try{
+      const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+      if(error)throw error;
+      renderUsers(data||[]);
+    }catch(err){ console.error(err); list.innerHTML='<div class="users-empty">Impossible de charger les utilisateurs.<br>Vérifiez que la table « profiles » existe (voir le guide).</div>'; }
+  }
+
+  function renderUsers(users){
+    const list=$('#usersList');
+    const pending=users.filter(u=>u.status==='pending').length;
+    $('#usersSummary').textContent=users.length+' compte(s) · '+pending+' en attente';
+    if(!users.length){ list.innerHTML='<div class="users-empty">Aucun utilisateur inscrit.</div>'; return; }
+    const labels={approved:'Autorisé',pending:'En attente',blocked:'Bloqué'};
+    list.innerHTML=users.map(u=>{
+      const st=u.status||'pending';
+      const initial=((u.email||'?')[0]||'?').toUpperCase();
+      const me=(currentUser&&u.id===currentUser.id);
+      let actions='';
+      if(me){ actions='<span style="font-size:9.5px;color:var(--ink-faint)">admin</span>'; }
+      else {
+        if(st!=='approved') actions+='<button class="u-btn ok" data-approve="'+u.id+'">Autoriser</button>';
+        if(st!=='blocked') actions+='<button class="u-btn block" data-block="'+u.id+'">Bloquer</button>';
+      }
+      return `<div class="user-row">
+        <div class="u-av">${initial}</div>
+        <div class="u-meta"><div class="u-mail">${u.email||'(sans email)'}</div>
+          <span class="u-badge ${st}">${labels[st]||st}</span></div>
+        <div class="u-actions">${actions}</div>
+      </div>`;
+    }).join('');
+    $$('#usersList [data-approve]').forEach(b=>b.addEventListener('click',()=>setUserStatus(b.dataset.approve,'approved')));
+    $$('#usersList [data-block]').forEach(b=>b.addEventListener('click',()=>setUserStatus(b.dataset.block,'blocked')));
+  }
+
+  async function setUserStatus(id,status){
+    if(!sb||!isAdmin(currentUser))return;
+    try{
+      const {error}=await sb.from('profiles').update({status}).eq('id',id);
+      if(error)throw error;
+      showToast(status==='approved'?'Utilisateur autorisé ✓':'Utilisateur bloqué',status!=='approved');
+      loadUsers();
+    }catch(err){ console.error(err); showToast('Action impossible',true); }
+  }
+
   window.addEventListener('beforeunload',()=>{ if(presenceChannel){try{presenceChannel.untrack();}catch(e){}} });
+
+  // Détection connexion / déconnexion réseau
+  function handleOffline(){
+    $('#offlineBanner').classList.add('show');
+    if(currentUser) setSync('Hors ligne','offline');
+  }
+  function handleOnline(){
+    $('#offlineBanner').classList.remove('show');
+    if(currentUser){
+      setSync('Reconnexion…','busy');
+      // recharge les paris s'ils n'avaient pas pu être chargés
+      if(loadFailed){ retryLoad(); }
+      else { setSync('Synchronisé','ok'); }
+    }
+  }
+  window.addEventListener('offline',handleOffline);
+  window.addEventListener('online',handleOnline);
 
   /* ---- INIT ---- */
   setAuthMode('login');
@@ -1064,7 +1717,21 @@
       $('#authSub').textContent='Configuration requise avant utilisation';
       return;
     }
+
+    // Détecte l'arrivée via le lien de réinitialisation de mot de passe
+    let recoveryHandled=false;
+    sb.auth.onAuthStateChange((event)=>{
+      if(event==='PASSWORD_RECOVERY'){ recoveryHandled=true; enterRecoveryMode(); }
+    });
+    // Repli : certains liens exposent type=recovery dans l'URL
+    const hash=window.location.hash||'';
+    const qs=window.location.search||'';
+    if(hash.includes('type=recovery')||qs.includes('type=recovery')){
+      recoveryHandled=true; enterRecoveryMode();
+    }
+
     const {data}=await sb.auth.getSession();
+    if(recoveryHandled){ return; } // on reste sur l'écran "nouveau mot de passe"
     if(data && data.session){ await enterApp(data.session.user); }
     else { showGate(); }
   })();
