@@ -17,9 +17,14 @@
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
     ADMIN_EMAIL: "mrnado.trading@gmail.com",
-    // (Optionnel) Scores en direct : collez ici l'URL du widget (attribut src="..." de l'iframe
-    // fourni par SofaScore, FcTables, ScoreBat, etc.). Laissez vide pour masquer la section.
-    SCORES_WIDGET_URL: ""
+    // (Optionnel) Scores en direct : collez ici une ou plusieurs URL de widget
+    // (l'attribut src="..." de l'iframe SofaScore, FcTables, ScoreBat, etc.).
+    // Pour PLUSIEURS ligues, séparez les URL par une virgule, chacune entre guillemets.
+    // Exemple : ["https://widgets.sofascore.com/...ligue1", "https://widgets.sofascore.com/...laliga"]
+    // Laissez le tableau vide [] pour masquer la section.
+    SCORES_WIDGET_URLS: [
+  "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=16363633,16363634,16363635,16363636,16363238,16363242,16363236,16363243,16363246,16363244&showCompetitionLogo=true&widgetTitle=Premier+League&widgetTheme=dark"
+]
   };
 </script>
 <style>
@@ -182,6 +187,35 @@
     opacity:0;transition:.3s;z-index:50}
   .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
+  /* Popup de notification surebet (utilisateur) */
+  .signal-popup{position:fixed;left:22px;bottom:22px;z-index:80;display:flex;align-items:center;gap:10px;
+    background:linear-gradient(90deg,var(--mint),#3ff0b4);color:var(--bg);border:none;cursor:pointer;
+    font-family:var(--sans);font-weight:700;font-size:13.5px;padding:13px 18px;border-radius:12px;
+    box-shadow:0 10px 30px -6px rgba(47,230,168,.6);animation:sigBlink 1s ease-in-out infinite}
+  @keyframes sigBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.97)}}
+  .signal-popup .sp-dot{width:9px;height:9px;border-radius:50%;background:var(--bg);opacity:.7}
+  .signal-popup .sp-badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 6px;
+    border-radius:11px;background:var(--red);color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;
+    display:grid;place-items:center;box-shadow:0 2px 8px rgba(255,93,108,.5);animation:none}
+  .signal-popup:hover{transform:scale(1.03)}
+  /* Cartes surebet dans la fenêtre */
+  .sig-card{background:var(--panel-2);border:1px solid var(--mint-dim);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .sig-card:last-child{margin-bottom:0}
+  .sig-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .sig-title{font-size:15px;font-weight:700;color:var(--ink)}
+  .sig-roi{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--mint);white-space:nowrap}
+  .sig-legs{display:flex;flex-direction:column;gap:7px;margin-bottom:8px}
+  .sig-leg{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:13px}
+  .sig-leg .sl-bk{color:var(--ink-dim);font-size:12px}
+  .sig-leg .sl-odd{font-family:var(--mono);font-weight:700;color:var(--mint)}
+  .sig-note{font-size:12px;color:var(--gold);margin-top:6px}
+  .sig-meta{font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);margin-top:8px}
+  .sig-empty{text-align:center;color:var(--ink-faint);font-family:var(--mono);font-size:13px;padding:24px}
+  .pub-leg-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  .pub-leg-row .plr-x{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;padding:4px}
+  .pub-leg-row .plr-x:hover{color:var(--red)}
+
   /* ===== PANNEAU ADMIN — QUI EST EN LIGNE ===== */
   .admin-panel{position:fixed;right:22px;bottom:22px;z-index:60}
   .admin-fab{position:relative;width:54px;height:54px;border-radius:16px;border:1px solid rgba(47,230,168,.35);
@@ -251,7 +285,9 @@
   .hist-card{margin-top:22px}
   .scores-card{margin-top:22px}
   .scores-mount{width:100%;border-radius:11px;overflow:hidden}
-  .scores-mount iframe{width:100%;border:0;display:block;min-height:400px;background:var(--panel-2);border-radius:11px}
+  .scores-item{margin-bottom:16px}
+  .scores-item:last-child{margin-bottom:0}
+  .scores-item iframe{width:100%;border:0;display:block;min-height:400px;background:var(--panel-2);border-radius:11px}
   .scores-placeholder{text-align:center;padding:34px 20px;background:var(--panel-2);
     border:1px dashed var(--line);border-radius:12px}
   .scores-placeholder .sp-ico{font-size:34px;margin-bottom:10px}
@@ -586,6 +622,7 @@
       <div class="chip" id="userChip" style="display:none">👤 <b id="userEmail">—</b></div>
       <button class="btn ghost" id="logoutBtn" style="display:none;padding:6px 14px;font-size:12px">Déconnexion</button>
       <span class="chip" id="syncChip" style="display:none">☁️ <b id="syncState">Synchronisé</b></span>
+      <button class="btn primary" id="publishBtn" style="display:none;padding:6px 14px;font-size:12px">📢 Publier un surebet</button>
     </div>
   </header>
 
@@ -745,7 +782,7 @@
       <div id="scoresPlaceholder" class="scores-placeholder">
         <div class="sp-ico">📡</div>
         <div class="sp-title">Aucun widget configuré</div>
-        <div class="sp-txt">Pour afficher les scores en direct : ouvrez un site de scores (SofaScore, FcTables, ScoreBat…), copiez le lien <b>src</b> du widget iframe qu'il vous donne, et collez-le dans <b>SCORES_WIDGET_URL</b> en haut du fichier.</div>
+        <div class="sp-txt">Pour afficher les scores en direct : ouvrez un site de scores (SofaScore, FcTables, ScoreBat…), copiez le lien <b>src</b> du widget iframe. Pour plusieurs ligues, ajoutez plusieurs adresses dans <b>SCORES_WIDGET_URLS</b> en haut du fichier, séparées par des virgules.</div>
       </div>
     </div>
   </div>
@@ -754,6 +791,51 @@
 </div>
 
 <div class="toast" id="toast">Pari enregistré ✓</div>
+
+<!-- ===== PUBLIER UN SUREBET (admin) ===== -->
+<div id="pubModal" class="edit-modal" style="display:none">
+  <div class="edit-backdrop" id="pubBackdrop"></div>
+  <div class="edit-box">
+    <div class="edit-head"><span>📢 Publier un surebet</span><button class="edit-x" id="pubClose">✕</button></div>
+    <div class="edit-body">
+      <p class="edit-note">Ce surebet sera envoyé en direct à tous les utilisateurs en ligne, et restera visible quelques minutes pour ceux qui se connectent juste après.</p>
+      <label class="fld"><span class="lab">Titre / Match</span><input type="text" id="pubTitle" placeholder="ex : PSG vs OM — 1X2"></label>
+      <div class="row r2" style="margin-bottom:12px">
+        <label class="fld" style="margin:0"><span class="lab">ROI estimé (%)</span><input type="number" id="pubRoi" step="0.1" placeholder="ex : 4.5"></label>
+        <label class="fld" style="margin:0"><span class="lab">Validité (minutes)</span>
+          <select id="pubTtl"><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option><option value="30">30 min</option></select></label>
+      </div>
+      <div id="pubLegs"></div>
+      <button class="btn ghost" id="pubAddLeg" style="width:100%;justify-content:center;margin-bottom:12px;font-size:13px">+ Ajouter une jambe</button>
+      <label class="fld"><span class="lab">Note (optionnel)</span><input type="text" id="pubNote" placeholder="ex : à placer vite, cotes qui bougent"></label>
+    </div>
+    <div class="edit-foot">
+      <button class="btn ghost" id="pubClean" style="margin-right:auto;font-size:12.5px">🧹 Nettoyer les expirés</button>
+      <button class="btn ghost" id="pubCancel">Annuler</button>
+      <button class="btn primary" id="pubSend">Publier maintenant</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== POPUP DE NOTIFICATION (utilisateur) ===== -->
+<button id="signalPopup" class="signal-popup" style="display:none">
+  <span class="sp-badge" id="signalCount">1</span>
+  <span class="sp-dot"></span>
+  <span class="sp-label">Surebet détecté — cliquez pour voir</span>
+</button>
+
+<!-- ===== FENÊTRE DES SUREBETS (utilisateur) ===== -->
+<div id="signalModal" class="edit-modal" style="display:none">
+  <div class="edit-backdrop" id="signalBackdrop"></div>
+  <div class="edit-box">
+    <div class="edit-head"><span>🎯 Surebets en direct</span><button class="edit-x" id="signalClose">✕</button></div>
+    <div class="edit-body" id="signalBody"></div>
+    <div class="edit-foot">
+      <span style="flex:1;font-size:11px;color:var(--ink-faint)">⚠️ Vérifiez toujours les cotes chez le bookmaker avant de miser.</span>
+      <button class="btn primary" id="signalCloseBtn">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== MODALE DE MODIFICATION ===== -->
 <div id="editModal" class="edit-modal" style="display:none">
@@ -935,20 +1017,29 @@
     $('#minOddBig').textContent=disp==='impossible'?'✕':disp;
     $('#minOddBig').style.color=disp==='impossible'?'var(--red)':'var(--mint)';
     const tb=$('#detTable');tb.innerHTML='';
-    // On n'affiche que les cotes adverses dont le ROI va du seuil saisi jusqu'à 10%.
-    if(minB===Infinity||minB<=1||thr>=10){
-      tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);padding:22px">Aucune cote dans la plage '+thr+'% → 10% avec cette cote.</td></tr>';
+    // Plage affichée : du seuil saisi jusqu'à un plafond.
+    // Le plafond est au moins 10%, mais toujours au moins 6 points au-dessus du seuil
+    // pour que la plage ait de la largeur même quand le seuil est élevé (10%, 12%...).
+    if(minB===Infinity||minB<=1){
+      const t=thr/100;
+      tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);padding:20px;line-height:1.6">'
+        +'Un profit de <b style="color:var(--gold)">'+thr+'%</b> est <b style="color:var(--red)">impossible</b> avec une cote de départ de '+a.toFixed(2)+'.<br>'
+        +'Il faudrait une cote de départ supérieure à <b style="color:var(--mint)">'+(1+t).toFixed(2)+'</b>.</td></tr>';
       return;
     }
-    // cote pour ROI = seuil (borne haute de cote, ROI mini) et cote pour ROI = 10% (borne basse? non : plus la cote adverse monte, plus le ROI monte)
-    const oddAtThr=minComplementOdd(a,thr);   // ROI = seuil
-    const oddAt10=minComplementOdd(a,10);     // ROI = 10%
-    const lo=Math.min(oddAtThr,oddAt10), hi=Math.max(oddAtThr,oddAt10);
+    const ceil=Math.max(10, thr+6);
+    const oddAtThr=minComplementOdd(a,thr);    // cote pour ROI = seuil
+    const oddAtCeil=minComplementOdd(a,ceil);  // cote pour ROI = plafond
+    if(oddAtCeil===Infinity||oddAtCeil<=1){
+      tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);padding:22px">Plage trop élevée pour cette cote de départ.</td></tr>';
+      return;
+    }
+    const lo=Math.min(oddAtThr,oddAtCeil), hi=Math.max(oddAtThr,oddAtCeil);
     const STEPS=9;
     for(let k=0;k<STEPS;k++){
       const b=lo+(hi-lo)*k/(STEPS-1);
       const roi=roiFor(a,b);
-      if(roi<thr-1e-9||roi>10+1e-9)continue;
+      if(roi<thr-1e-9||roi>ceil+1e-9)continue;
       const tr=document.createElement('tr');tr.className='good';
       tr.innerHTML=`<td>${b.toFixed(2)}</td><td class="pct">oui</td>
         <td class="pct">+${roi.toFixed(2)}%</td>
@@ -1500,9 +1591,11 @@
     $('#userChip').style.display='';$('#userEmail').textContent=user.email;
     $('#logoutBtn').style.display='';
     $('#adminHistBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
+    $('#publishBtn').style.display = isAdmin(user) ? 'inline-flex' : 'none';
     await loadHistory();
     renderHistory();
     startPresence(user);
+    startSignals(user);
   }
 
   /* ===== PRÉSENCE (qui est en ligne) ===== */
@@ -1523,6 +1616,159 @@
       try{await sb.removeChannel(presenceChannel);}catch(e){} presenceChannel=null; }
     $('#adminPanel').style.display='none';
   }
+
+  /* ===== SUREBETS EN DIRECT (signals) ===== */
+  let signalsChannel=null, activeSignals=[], signalsSeen={}, signalSweepTimer=null;
+
+  function startSignals(user){
+    if(!sb||signalsChannel)return;
+    // 1) charge les surebets encore valides (pour ceux qui arrivent après la publication)
+    loadActiveSignals();
+    // 2) écoute les nouvelles publications en temps réel
+    signalsChannel = sb.channel('nadobet_signals')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'signals'},payload=>{
+        const s=payload.new;
+        if(s && new Date(s.expires_at).getTime()>Date.now()){
+          addSignal(s, true);
+        }
+      })
+      .subscribe();
+    if(!signalSweepTimer) signalSweepTimer=setInterval(sweepExpired, 15000);
+  }
+  async function stopSignals(){
+    if(signalsChannel){ try{await sb.removeChannel(signalsChannel);}catch(e){} signalsChannel=null; }
+    if(signalSweepTimer){ clearInterval(signalSweepTimer); signalSweepTimer=null; }
+    activeSignals=[]; signalsSeen={}; updateSignalPopup();
+  }
+  async function loadActiveSignals(){
+    if(!sb)return;
+    try{
+      const nowIso=new Date().toISOString();
+      const {data,error}=await sb.from('signals').select('*').gt('expires_at',nowIso).order('created_at',{ascending:false});
+      if(error)throw error;
+      (data||[]).forEach(s=>addSignal(s,false));
+      updateSignalPopup();
+    }catch(err){ console.error(err); }
+  }
+  function addSignal(s, blink){
+    if(activeSignals.some(x=>x.id===s.id))return;
+    activeSignals.unshift(s);
+    updateSignalPopup(blink);
+    // si la fenêtre est déjà ouverte, on rafraîchit
+    if($('#signalModal').style.display==='flex') renderSignals();
+  }
+  function sweepExpired(){
+    const before=activeSignals.length;
+    activeSignals=activeSignals.filter(s=>new Date(s.expires_at).getTime()>Date.now());
+    if(activeSignals.length!==before){ updateSignalPopup(); if($('#signalModal').style.display==='flex') renderSignals(); }
+  }
+  function unseenCount(){ return activeSignals.filter(s=>!signalsSeen[s.id]).length; }
+  function updateSignalPopup(blink){
+    const pop=$('#signalPopup');
+    const unseen=unseenCount();
+    if(activeSignals.length===0){ pop.style.display='none'; return; }
+    // le popup s'affiche s'il y a des surebets non encore vus
+    if(unseen>0){
+      pop.style.display='flex';
+      $('#signalCount').textContent=unseen;
+    }else{
+      pop.style.display='none';
+    }
+  }
+  function renderSignals(){
+    const body=$('#signalBody');
+    if(!activeSignals.length){ body.innerHTML='<div class="sig-empty">Aucun surebet actif pour le moment.</div>'; return; }
+    body.innerHTML=activeSignals.map(s=>{
+      let legs=[];
+      try{ legs=Array.isArray(s.legs)?s.legs:JSON.parse(s.legs||'[]'); }catch(e){ legs=[]; }
+      const legsHtml=legs.map(l=>`<div class="sig-leg"><span>${(l.match||l.pick||'—')} <span class="sl-bk">· ${l.bk||''}</span></span><span class="sl-odd">${l.odd||''}</span></div>`).join('');
+      const mins=Math.max(0,Math.round((new Date(s.expires_at).getTime()-Date.now())/60000));
+      return `<div class="sig-card">
+        <div class="sig-top"><span class="sig-title">${s.title||'Surebet'}</span>
+          ${s.roi?`<span class="sig-roi">+${Number(s.roi).toFixed(2)}%</span>`:''}</div>
+        <div class="sig-legs">${legsHtml||'<span style="color:var(--ink-faint);font-size:12px">Détails dans la note.</span>'}</div>
+        ${s.note?`<div class="sig-note">📝 ${s.note}</div>`:''}
+        <div class="sig-meta">Publié · expire dans ~${mins} min</div>
+      </div>`;
+    }).join('');
+  }
+  function openSignals(){
+    activeSignals.forEach(s=>signalsSeen[s.id]=true);
+    renderSignals();
+    $('#signalModal').style.display='flex';
+    updateSignalPopup();
+  }
+  function closeSignals(){ $('#signalModal').style.display='none'; }
+
+  // Publication (admin)
+  function buildPubLeg(match,bk,odd){
+    const wrap=document.createElement('div'); wrap.className='pub-leg-row';
+    wrap.innerHTML=`<input type="text" class="pl-match" placeholder="Match / issue" value="${match||''}">
+      <select class="pl-bk">${bkOptions}</select>
+      <span style="display:flex;gap:6px;align-items:center">
+        <input type="number" class="pl-odd" step="0.01" placeholder="cote" style="width:78px" value="${odd||''}">
+        <button type="button" class="plr-x" title="Retirer">✕</button></span>`;
+    wrap.querySelector('.plr-x').addEventListener('click',()=>wrap.remove());
+    if(bk){ const sel=wrap.querySelector('.pl-bk'); if([...sel.options].some(o=>o.value===bk))sel.value=bk; }
+    return wrap;
+  }
+  function openPublish(){
+    $('#pubTitle').value=''; $('#pubRoi').value=''; $('#pubNote').value=''; $('#pubTtl').value='10';
+    const box=$('#pubLegs'); box.innerHTML='';
+    box.appendChild(buildPubLeg()); box.appendChild(buildPubLeg());
+    $('#pubModal').style.display='flex';
+  }
+  function closePublish(){ $('#pubModal').style.display='none'; }
+  async function sendPublish(){
+    if(!sb||!isAdmin(currentUser))return;
+    const title=($('#pubTitle').value||'').trim();
+    if(!title){ showToast('Donnez un titre au surebet',true); return; }
+    const legs=$$('#pubLegs .pub-leg-row').map(r=>({
+      match:(r.querySelector('.pl-match').value||'').trim(),
+      bk:r.querySelector('.pl-bk').value,
+      odd:(r.querySelector('.pl-odd').value||'').trim()
+    })).filter(l=>l.match||l.odd);
+    const roi=parseFloat($('#pubRoi').value)||null;
+    const ttl=parseInt($('#pubTtl').value)||10;
+    const note=($('#pubNote').value||'').trim();
+    const expires=new Date(Date.now()+ttl*60000).toISOString();
+    try{
+      const {error}=await sb.from('signals').insert({
+        author_id:currentUser.id, title, roi, legs, note, expires_at:expires
+      });
+      if(error)throw error;
+      showToast('Surebet publié ✓');
+      closePublish();
+    }catch(err){ console.error(err); showToast('Échec de la publication',true); }
+  }
+
+  // Nettoyage manuel des surebets expirés (admin)
+  async function cleanExpiredSignals(){
+    if(!sb||!isAdmin(currentUser))return;
+    const btn=$('#pubClean'); const old=btn.textContent;
+    btn.disabled=true; btn.textContent='Nettoyage…';
+    try{
+      const nowIso=new Date().toISOString();
+      const {error}=await sb.from('signals').delete().lt('expires_at',nowIso);
+      if(error)throw error;
+      showToast('Surebets expirés supprimés ✓');
+    }catch(err){ console.error(err); showToast('Nettoyage impossible',true); }
+    finally{ btn.disabled=false; btn.textContent=old; }
+  }
+
+  // Événements signals
+  $('#publishBtn').addEventListener('click',openPublish);
+  $('#pubClose').addEventListener('click',closePublish);
+  $('#pubCancel').addEventListener('click',closePublish);
+  $('#pubBackdrop').addEventListener('click',closePublish);
+  $('#pubSend').addEventListener('click',sendPublish);
+  $('#pubClean').addEventListener('click',cleanExpiredSignals);
+  $('#pubAddLeg').addEventListener('click',()=>$('#pubLegs').appendChild(buildPubLeg()));
+  $('#signalPopup').addEventListener('click',openSignals);
+  $('#signalClose').addEventListener('click',closeSignals);
+  $('#signalCloseBtn').addEventListener('click',closeSignals);
+  $('#signalBackdrop').addEventListener('click',closeSignals);
+
   function renderPresence(){
     if(!presenceChannel||!isAdmin(currentUser))return;
     const state=presenceChannel.presenceState();
@@ -1572,9 +1818,12 @@
   }
   async function doLogout(){
     await stopPresence();
+    await stopSignals();
     if(sb)await sb.auth.signOut();
     currentUser=null;history=[];renderHistory();showGate();
     $('#adminHistBtns').style.display='none';
+    $('#publishBtn').style.display='none';
+    $('#signalPopup').style.display='none';
     $('#authEmail').value='';$('#authPass').value='';clearAuthError();
   }
 
@@ -1787,15 +2036,28 @@
     $('#histCard').classList.add('hist-collapsed');
   }}catch(e){}
 
-  // Scores en direct : injecte le widget si une URL est configurée
+  // Scores en direct : injecte un ou plusieurs widgets
   (function(){
-    const url=(cfg.SCORES_WIDGET_URL||'').trim();
+    // Compatibilité : accepte SCORES_WIDGET_URLS (liste) ou l'ancien SCORES_WIDGET_URL (unique)
+    let urls=[];
+    if(Array.isArray(cfg.SCORES_WIDGET_URLS)) urls=cfg.SCORES_WIDGET_URLS.slice();
+    else if(cfg.SCORES_WIDGET_URLS) urls=[cfg.SCORES_WIDGET_URLS];
+    if(cfg.SCORES_WIDGET_URL) urls.push(cfg.SCORES_WIDGET_URL);
+    urls=urls.map(u=>(u||'').trim()).filter(u=>/^https:\/\//i.test(u));
+
     const mount=$('#scoresMount'), ph=$('#scoresPlaceholder');
-    if(url && /^https:\/\//i.test(url)){
-      const ifr=document.createElement('iframe');
-      ifr.src=url; ifr.loading='lazy'; ifr.referrerPolicy='no-referrer-when-downgrade';
-      ifr.setAttribute('title','Scores en direct');
-      mount.appendChild(ifr); ph.style.display='none';
+    if(urls.length){
+      ph.style.display='none';
+      mount.innerHTML='';
+      urls.forEach((u,i)=>{
+        const block=document.createElement('div');
+        block.className='scores-item';
+        const ifr=document.createElement('iframe');
+        ifr.src=u; ifr.loading='lazy'; ifr.referrerPolicy='no-referrer-when-downgrade';
+        ifr.setAttribute('title','Scores en direct '+(i+1));
+        block.appendChild(ifr);
+        mount.appendChild(block);
+      });
     }else{
       mount.style.display='none';
     }
