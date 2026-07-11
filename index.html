@@ -16,7 +16,10 @@
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
-    ADMIN_EMAIL: "mrnado.trading@gmail.com"
+    ADMIN_EMAIL: "mrnado.trading@gmail.com",
+    // (Optionnel) Scores en direct : collez ici l'URL du widget (attribut src="..." de l'iframe
+    // fourni par SofaScore, FcTables, ScoreBat, etc.). Laissez vide pour masquer la section.
+    SCORES_WIDGET_URL: ""
   };
 </script>
 <style>
@@ -26,6 +29,27 @@
     --gold:#f5c542;--red:#ff5d6c;--blue:#4db6f0;--radius:14px;
     --mono:'JetBrains Mono','SF Mono',ui-monospace,monospace;--sans:'Inter',-apple-system,system-ui,sans-serif;
   }
+  :root[data-theme="light"]{
+    --bg:#eef2f4;--panel:#ffffff;--panel-2:#f5f8f9;--line:#d6e0e4;--line-soft:#e6edf0;
+    --ink:#0f1c22;--ink-dim:#4a6470;--ink-faint:#8098a2;--mint:#0f9d6e;--mint-dim:#8fe0c4;
+    --gold:#c9922b;--red:#e0435a;--blue:#2b83c9;
+  }
+  :root[data-theme="light"] body{
+    background:radial-gradient(1200px 600px at 80% -10%, #dcece6 0%, transparent 60%),var(--bg);
+  }
+  :root[data-theme="light"] .auth-gate{
+    background:radial-gradient(600px 300px at 50% 0%, rgba(15,157,110,.10) 0%, transparent 70%),
+      radial-gradient(900px 600px at 50% -5%, #dcece6 0%, var(--bg) 55%);
+  }
+  :root[data-theme="light"] .auth-card{background:linear-gradient(180deg,#ffffff,#f5f8f9)}
+  :root[data-theme="light"] .auth-field input:focus{background:#ffffff}
+  :root[data-theme="light"] .admin-fab,
+  :root[data-theme="light"] .admin-drawer{background:#ffffff}
+  :root[data-theme="light"] .brand h1 .hlogo,
+  :root[data-theme="light"] .auth-logo{
+    background:radial-gradient(circle at 30% 25%,rgba(15,157,110,.18),rgba(15,157,110,.05))}
+  :root[data-theme="light"] .toast{color:#ffffff}
+  :root[data-theme="light"] .offline-banner{color:#ffffff}
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--sans);background:radial-gradient(1200px 600px at 80% -10%, #10242c 0%, transparent 60%),var(--bg);
@@ -57,6 +81,13 @@
   .brand p{color:var(--ink-dim);font-size:13px;max-width:520px;line-height:1.5}
   .legend{display:flex;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);align-items:center;flex-wrap:wrap}
   .legend .chip{padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--ink-dim)}
+  .theme-toggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--gold);cursor:pointer;display:grid;place-items:center;transition:.18s;flex:none}
+  .theme-toggle:hover{border-color:var(--mint);transform:translateY(-1px)}
+  .theme-toggle .ic-moon{display:none}
+  :root[data-theme="light"] .theme-toggle{color:var(--blue)}
+  :root[data-theme="light"] .theme-toggle .ic-sun{display:none}
+  :root[data-theme="light"] .theme-toggle .ic-moon{display:block}
   .legend .chip b{color:var(--mint)}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
   @media(max-width:980px){.cols{grid-template-columns:1fr}}
@@ -218,6 +249,15 @@
     font-size:10px;color:var(--ink-faint);text-align:center;letter-spacing:.02em}
   @media(max-width:640px){.admin-drawer{width:calc(100vw - 44px)}}
   .hist-card{margin-top:22px}
+  .scores-card{margin-top:22px}
+  .scores-mount{width:100%;border-radius:11px;overflow:hidden}
+  .scores-mount iframe{width:100%;border:0;display:block;min-height:400px;background:var(--panel-2);border-radius:11px}
+  .scores-placeholder{text-align:center;padding:34px 20px;background:var(--panel-2);
+    border:1px dashed var(--line);border-radius:12px}
+  .scores-placeholder .sp-ico{font-size:34px;margin-bottom:10px}
+  .scores-placeholder .sp-title{font-size:15px;font-weight:600;color:var(--ink-dim);margin-bottom:8px}
+  .scores-placeholder .sp-txt{font-size:12.5px;color:var(--ink-faint);line-height:1.6;max-width:460px;margin:0 auto}
+  .scores-placeholder .sp-txt b{color:var(--mint)}
   .perf-panel{margin-bottom:22px}
   .perf-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .perf-box{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px}
@@ -537,6 +577,10 @@
       <p>Détectez la cote à associer, calculez vos mises, choisissez le bookmaker et enregistrez chaque pari dans votre historique Excel.</p>
     </div>
     <div class="legend">
+      <button class="theme-toggle" id="themeToggle" title="Thème clair / sombre" aria-label="Basculer le thème">
+        <svg class="ic-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="ic-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
       <div class="chip">Seuil actif <b id="thrChip">4%</b></div>
       <div class="chip">Paris enregistrés <b id="countChip">0</b></div>
       <div class="chip" id="userChip" style="display:none">👤 <b id="userEmail">—</b></div>
@@ -682,6 +726,26 @@
           <th>Total</th><th>Retour</th><th>Profit</th><th>ROI</th><th>Statut</th>
         </tr></thead><tbody id="histBody"></tbody></table>
         <div class="hist-empty" id="histEmpty">Aucun pari enregistré pour l'instant.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCORES EN DIRECT ===== -->
+  <div class="card scores-card" id="scoresCard">
+    <div class="card-head">
+      <div class="title"><span class="num">4</span>
+        <div><h2>Scores en direct</h2><span class="sub">Widget de résultats en temps réel</span></div></div>
+      <button class="eye-btn on" id="scoresEye" title="Afficher / masquer" aria-label="Afficher ou masquer les scores">
+        <svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="scoresMount" class="scores-mount"></div>
+      <div id="scoresPlaceholder" class="scores-placeholder">
+        <div class="sp-ico">📡</div>
+        <div class="sp-title">Aucun widget configuré</div>
+        <div class="sp-txt">Pour afficher les scores en direct : ouvrez un site de scores (SofaScore, FcTables, ScoreBat…), copiez le lien <b>src</b> du widget iframe qu'il vous donne, et collez-le dans <b>SCORES_WIDGET_URL</b> en haut du fichier.</div>
       </div>
     </div>
   </div>
@@ -1700,10 +1764,52 @@
     next();
     setInterval(next,2000);
   })();
+  // Thème clair / sombre
+  function applyTheme(t){
+    if(t==='light') document.documentElement.setAttribute('data-theme','light');
+    else document.documentElement.removeAttribute('data-theme');
+  }
+  (function(){
+    let saved='dark';
+    try{ saved=localStorage.getItem('nadobet_theme')||'dark'; }catch(e){}
+    applyTheme(saved);
+    const btn=$('#themeToggle');
+    if(btn) btn.addEventListener('click',()=>{
+      const isLight=document.documentElement.getAttribute('data-theme')==='light';
+      const next=isLight?'dark':'light';
+      applyTheme(next);
+      try{localStorage.setItem('nadobet_theme',next);}catch(e){}
+    });
+  })();
+
   try{if(localStorage.getItem('nadobet_hist_visible')==='0'){
     $('#histEye').classList.remove('on');
     $('#histCard').classList.add('hist-collapsed');
   }}catch(e){}
+
+  // Scores en direct : injecte le widget si une URL est configurée
+  (function(){
+    const url=(cfg.SCORES_WIDGET_URL||'').trim();
+    const mount=$('#scoresMount'), ph=$('#scoresPlaceholder');
+    if(url && /^https:\/\//i.test(url)){
+      const ifr=document.createElement('iframe');
+      ifr.src=url; ifr.loading='lazy'; ifr.referrerPolicy='no-referrer-when-downgrade';
+      ifr.setAttribute('title','Scores en direct');
+      mount.appendChild(ifr); ph.style.display='none';
+    }else{
+      mount.style.display='none';
+    }
+    // Toggle œil
+    const eye=$('#scoresEye'), card=$('#scoresCard');
+    try{ if(localStorage.getItem('nadobet_scores_visible')==='0'){ eye.classList.remove('on'); card.classList.add('hist-collapsed'); } }catch(e){}
+    eye.addEventListener('click',()=>{
+      const on=!eye.classList.contains('on');
+      eye.classList.toggle('on',on);
+      card.classList.toggle('hist-collapsed',!on);
+      try{localStorage.setItem('nadobet_scores_visible',on?'1':'0');}catch(e){}
+    });
+  })();
+
   $('#betDate').value=new Date().toISOString().slice(0,10);
   buildIssueBlocks();
   renderDetector();
