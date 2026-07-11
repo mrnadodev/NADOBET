@@ -26,9 +26,6 @@
   "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=16363633,16363634,16363635,16363636,16363238,16363242,16363236,16363243,16363246,16363244&showCompetitionLogo=true&widgetTitle=Premier+League&widgetTheme=dark",
   "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=12813016,12812994,12813017,12813015&showCompetitionLogo=true&widgetTitle=FIFA+World+Cup%2C+Knockout&widgetTheme=dark"
 ]
-
-
-  };
 </script>
 <style>
   :root{
@@ -287,6 +284,11 @@
   @media(max-width:640px){.admin-drawer{width:calc(100vw - 44px)}}
   .hist-card{margin-top:22px}
   .scores-card{margin-top:22px}
+  .scores-stats-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    margin-top:14px;padding:13px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px}
+  .scores-stats-bar .ssb-txt{font-size:12.5px;color:var(--ink-dim);flex:1;min-width:200px}
+  .scores-stats-bar .ssb-btn{text-decoration:none;font-size:13px;padding:10px 16px;white-space:nowrap}
+  @media(max-width:640px){.scores-stats-bar .ssb-btn{width:100%;justify-content:center;text-align:center}}
   .scores-mount{width:100%;border-radius:11px;overflow:hidden}
   .scores-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
   .scores-tab{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;
@@ -790,6 +792,10 @@
     </div>
     <div class="card-body">
       <div id="scoresMount" class="scores-mount"></div>
+      <div id="scoresStatsBar" class="scores-stats-bar" style="display:none">
+        <span class="ssb-txt">Pour les statistiques détaillées d'un match (tirs, corners, possession…) :</span>
+        <a id="scoresStatsLink" href="https://www.sofascore.com/" target="_blank" rel="noopener" class="btn primary ssb-btn">📊 Voir les stats sur SofaScore ↗</a>
+      </div>
       <div id="scoresPlaceholder" class="scores-placeholder">
         <div class="sp-ico">📡</div>
         <div class="sp-title">Aucun widget configuré</div>
@@ -2059,6 +2065,7 @@
     const mount=$('#scoresMount'), ph=$('#scoresPlaceholder');
     if(urls.length){
       ph.style.display='none';
+      $('#scoresStatsBar').style.display='flex';
       mount.innerHTML='';
 
       // Extrait un titre lisible depuis le paramètre widgetTitle de l'URL
