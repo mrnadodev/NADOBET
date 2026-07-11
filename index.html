@@ -12,7 +12,7 @@
      Collez ci-dessous les 2 valeurs de votre projet Supabase :
      Settings → API → "Project URL" et "anon public" key.
      ============================================================ */
-  window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -288,9 +288,17 @@
   .hist-card{margin-top:22px}
   .scores-card{margin-top:22px}
   .scores-mount{width:100%;border-radius:11px;overflow:hidden}
-  .scores-item{margin-bottom:16px}
-  .scores-item:last-child{margin-bottom:0}
-  .scores-item iframe{width:100%;border:0;display:block;min-height:400px;background:var(--panel-2);border-radius:11px}
+  .scores-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .scores-tab{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
+    padding:8px 14px;border-radius:9px;transition:.15s;white-space:nowrap}
+  .scores-tab:hover{color:var(--ink);border-color:var(--mint-dim)}
+  .scores-tab.on{background:var(--mint);color:var(--bg);border-color:var(--mint)}
+  .scores-panel{display:none}
+  .scores-panel.on{display:block}
+  .scores-frame{width:100%;height:520px;overflow:auto;border-radius:11px;background:var(--panel-2);
+    -webkit-overflow-scrolling:touch}
+  .scores-frame iframe{width:100%;border:0;display:block;min-height:1200px;background:var(--panel-2)}
   .scores-placeholder{text-align:center;padding:34px 20px;background:var(--panel-2);
     border:1px dashed var(--line);border-radius:12px}
   .scores-placeholder .sp-ico{font-size:34px;margin-bottom:10px}
@@ -2052,14 +2060,59 @@
     if(urls.length){
       ph.style.display='none';
       mount.innerHTML='';
+
+      // Extrait un titre lisible depuis le paramètre widgetTitle de l'URL
+      function titleOf(u,idx){
+        try{
+          const m=u.match(/[?&]widgetTitle=([^&]+)/i);
+          if(m) return decodeURIComponent(m[1].replace(/\+/g,' '));
+        }catch(e){}
+        return 'Ligue '+(idx+1);
+      }
+
+      // Barre d'onglets
+      const tabs=document.createElement('div'); tabs.className='scores-tabs';
+      // Conteneur des panneaux
+      const panels=document.createElement('div'); panels.className='scores-panels';
+
       urls.forEach((u,i)=>{
-        const block=document.createElement('div');
-        block.className='scores-item';
+        const title=titleOf(u,i);
+        // onglet
+        const tab=document.createElement('button');
+        tab.className='scores-tab'+(i===0?' on':'');
+        tab.textContent=title; tab.dataset.idx=i;
+        tabs.appendChild(tab);
+        // panneau (iframe chargé à la demande)
+        const panel=document.createElement('div');
+        panel.className='scores-panel'+(i===0?' on':'');
+        panel.dataset.idx=i; panel.dataset.url=u;
+        const frame=document.createElement('div'); frame.className='scores-frame';
+        panel.appendChild(frame);
+        panels.appendChild(panel);
+      });
+      mount.appendChild(tabs); mount.appendChild(panels);
+
+      function loadPanel(panel){
+        if(panel.dataset.loaded)return;
         const ifr=document.createElement('iframe');
-        ifr.src=u; ifr.loading='lazy'; ifr.referrerPolicy='no-referrer-when-downgrade';
-        ifr.setAttribute('title','Scores en direct '+(i+1));
-        block.appendChild(ifr);
-        mount.appendChild(block);
+        ifr.src=panel.dataset.url; ifr.loading='lazy'; ifr.referrerPolicy='no-referrer-when-downgrade';
+        ifr.setAttribute('title','Scores en direct'); ifr.setAttribute('scrolling','yes');
+        panel.querySelector('.scores-frame').appendChild(ifr);
+        panel.dataset.loaded='1';
+      }
+      // charge le premier
+      loadPanel(panels.querySelector('.scores-panel.on'));
+
+      tabs.querySelectorAll('.scores-tab').forEach(tab=>{
+        tab.addEventListener('click',()=>{
+          const idx=tab.dataset.idx;
+          tabs.querySelectorAll('.scores-tab').forEach(t=>t.classList.toggle('on',t===tab));
+          panels.querySelectorAll('.scores-panel').forEach(p=>{
+            const active=p.dataset.idx===idx;
+            p.classList.toggle('on',active);
+            if(active) loadPanel(p);
+          });
+        });
       });
     }else{
       mount.style.display='none';
