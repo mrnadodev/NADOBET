@@ -17,13 +17,12 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+ window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
     ADMIN_EMAIL: "mrnado.trading@gmail.com",
   };
-
 </script>
 <style>
   :root{
@@ -343,6 +342,28 @@
   .bk-move .bm-del:hover{color:var(--red);background:rgba(255,93,108,.1)}
   .bk-empty{text-align:center;color:var(--ink-faint);font-size:12px;font-family:var(--mono);padding:18px}
   .hist-card{margin-top:22px}
+  .chat-card{margin-top:22px}
+  .chat-messages{height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px;margin-bottom:14px}
+  .chat-loading,.chat-empty{text-align:center;color:var(--ink-faint);font-family:var(--mono);font-size:12px;padding:24px;margin:auto}
+  .chat-msg{display:flex;gap:10px;align-items:flex-start;max-width:85%}
+  .chat-msg.mine{align-self:flex-end;flex-direction:row-reverse}
+  .chat-msg .cm-av{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:12px;background:var(--line);color:var(--ink-dim)}
+  .chat-msg.mine .cm-av{background:var(--mint-dim);color:var(--bg)}
+  .chat-msg .cm-body{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:9px 13px;min-width:0}
+  .chat-msg.mine .cm-body{background:rgba(47,230,168,.1);border-color:var(--mint-dim)}
+  .chat-msg .cm-top{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+  .chat-msg .cm-name{font-size:11.5px;font-weight:700;color:var(--mint)}
+  .chat-msg.mine .cm-name{color:var(--ink)}
+  .chat-msg .cm-time{font-size:9.5px;color:var(--ink-faint);font-family:var(--mono)}
+  .chat-msg .cm-text{font-size:13.5px;color:var(--ink);line-height:1.4;word-wrap:break-word;overflow-wrap:anywhere}
+  .chat-msg .cm-del{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px;align-self:center}
+  .chat-msg .cm-del:hover{color:var(--red);background:rgba(255,93,108,.1)}
+  .chat-compose{display:flex;gap:10px}
+  .chat-compose input{flex:1}
+  .chat-foot{font-size:11px;color:var(--ink-faint);margin-top:10px;line-height:1.5}
+  .chat-blocked{text-align:center;color:var(--gold);font-size:12px;font-family:var(--mono);padding:10px;
+    background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);border-radius:9px}
   .scores-card{margin-top:22px}
   .scores-stats-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
     margin-bottom:14px;padding:13px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px}
@@ -2089,6 +2110,7 @@
     renderHistory();
     startPresence(user);
     startSignals(user);
+    startChat(user);
   }
 
   /* ===== PRÉSENCE (qui est en ligne) ===== */
@@ -2133,6 +2155,92 @@
     if(signalSweepTimer){ clearInterval(signalSweepTimer); signalSweepTimer=null; }
     activeSignals=[]; signalsSeen={}; signalsUsed={}; updateSignalPopup();
   }
+
+  /* ===== CHAT COMMUNAUTAIRE ===== */
+  let chatChannel=null, chatMsgs=[];
+  const CHAT_LIMIT=100; // nombre de messages chargés
+
+  function chatName(email){ return (email||'?').split('@')[0]; }
+  function chatInitial(email){ return ((email||'?')[0]||'?').toUpperCase(); }
+  function escapeHTML(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  async function startChat(user){
+    if(!sb||chatChannel)return;
+    await loadChatMessages();
+    chatChannel=sb.channel('nadobet_chat')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},payload=>{
+        const m=payload.new;
+        if(!chatMsgs.some(x=>x.id===m.id)){ chatMsgs.push(m); renderChat(true); }
+      })
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'messages'},payload=>{
+        chatMsgs=chatMsgs.filter(x=>x.id!==payload.old.id); renderChat(false);
+      })
+      .subscribe();
+  }
+  async function stopChat(){
+    if(chatChannel){ try{await sb.removeChannel(chatChannel);}catch(e){} chatChannel=null; }
+    chatMsgs=[];
+  }
+  async function loadChatMessages(){
+    if(!sb)return;
+    try{
+      const {data,error}=await sb.from('messages').select('*').order('created_at',{ascending:false}).limit(CHAT_LIMIT);
+      if(error)throw error;
+      chatMsgs=(data||[]).reverse();
+      renderChat(true);
+    }catch(err){ console.error('chat:',err);
+      $('#chatMessages').innerHTML='<div class="chat-empty">Chat indisponible.<br>Vérifiez que la table « messages » existe (voir le guide).</div>'; }
+  }
+  function renderChat(scroll){
+    const box=$('#chatMessages'); if(!box)return;
+    if(!chatMsgs.length){ box.innerHTML='<div class="chat-empty">Aucun message. Soyez le premier à écrire !</div>'; return; }
+    const admin=isAdmin(currentUser);
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    box.innerHTML=chatMsgs.map(m=>{
+      const mine=currentUser&&m.user_id===currentUser.id;
+      const t=new Date(m.created_at);
+      const time=t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const delBtn=(admin||mine)?`<button class="cm-del" data-del="${m.id}" title="Supprimer">✕</button>`:'';
+      return `<div class="chat-msg ${mine?'mine':''}">
+        <div class="cm-av">${chatInitial(m.email)}</div>
+        <div class="cm-body">
+          <div class="cm-top"><span class="cm-name">${mine?'Vous':escapeHTML(chatName(m.email))}</span><span class="cm-time">${time}</span></div>
+          <div class="cm-text">${escapeHTML(m.text)}</div>
+        </div>
+        ${delBtn}
+      </div>`;
+    }).join('');
+    $$('#chatMessages .cm-del').forEach(b=>b.addEventListener('click',()=>deleteChatMsg(b.dataset.del)));
+    if(scroll||nearBottom) box.scrollTop=box.scrollHeight;
+  }
+  async function sendChatMsg(){
+    if(!sb||!currentUser)return;
+    const input=$('#chatInput');
+    const text=(input.value||'').trim();
+    if(!text)return;
+    if(text.length>500){ showToast('Message trop long',true); return; }
+    input.value='';
+    try{
+      const {error}=await sb.from('messages').insert({user_id:currentUser.id, email:currentUser.email, text});
+      if(error)throw error;
+    }catch(err){ console.error(err); showToast('Échec de l\u2019envoi du message',true); input.value=text; }
+  }
+  async function deleteChatMsg(id){
+    if(!sb)return;
+    chatMsgs=chatMsgs.filter(x=>x.id!==id); renderChat(false);
+    try{ await sb.from('messages').delete().eq('id',id); }catch(err){ console.error(err); }
+  }
+  // Événements chat
+  $('#chatSend').addEventListener('click',sendChatMsg);
+  $('#chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChatMsg(); } });
+  $('#chatEye').addEventListener('click',()=>{
+    const eye=$('#chatEye'), card=$('#chatCard');
+    const on=!eye.classList.contains('on');
+    eye.classList.toggle('on',on);
+    card.classList.toggle('hist-collapsed',!on);
+    try{localStorage.setItem('nadobet_chat_visible',on?'1':'0');}catch(e){}
+  });
+
   async function loadActiveSignals(){
     if(!sb)return;
     try{
@@ -2395,6 +2503,7 @@
   async function doLogout(){
     await stopPresence();
     await stopSignals();
+    await stopChat();
     if(sb)await sb.auth.signOut();
     currentUser=null;history=[];renderHistory();showGate();
     $('#adminHistBtns').style.display='none';
@@ -2625,6 +2734,10 @@
   try{if(localStorage.getItem('nadobet_hist_visible')==='0'){
     $('#histEye').classList.remove('on');
     $('#histCard').classList.add('hist-collapsed');
+  }}catch(e){}
+  try{if(localStorage.getItem('nadobet_chat_visible')==='0'){
+    $('#chatEye').classList.remove('on');
+    $('#chatCard').classList.add('hist-collapsed');
   }}catch(e){}
 
   $('#betDate').value=new Date().toISOString().slice(0,10);
