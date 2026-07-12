@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-   window.NADOBET_CONFIG = {
+  window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -32,7 +32,6 @@
   "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=12813016,12812994,12813017,12813015&showCompetitionLogo=true&widgetTitle=FIFA+World+Cup%2C+Knockout&widgetTheme=dark"
 ]
 };
-
 </script>
 <style>
   :root{
@@ -160,6 +159,16 @@
   .badge{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
   .badge.hit{background:rgba(47,230,168,.15);color:var(--mint)}
   .badge.no{background:rgba(255,93,108,.12);color:var(--red)}
+  .verify-box{margin-top:16px;background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.3);
+    border-radius:11px;padding:14px 16px;transition:.2s}
+  .verify-box.vb-ok{background:rgba(47,230,168,.06);border-color:var(--mint-dim)}
+  .verify-box .vb-head{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px}
+  .verify-box.vb-ok .vb-head{color:var(--mint)}
+  .verify-box .vb-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:0 0 10px}
+  .verify-box .vb-list li label{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;color:var(--ink-dim);line-height:1.4}
+  .verify-box .vb-list li input{margin-top:2px;width:16px;height:16px;accent-color:var(--mint);flex:none;cursor:pointer}
+  .verify-box .vb-list li b{color:var(--ink)}
+  .verify-box .vb-foot{font-size:11.5px;color:var(--ink-faint);line-height:1.5;transition:.2s}
   .verdict{border-radius:11px;padding:16px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;
     gap:14px;border:1px solid var(--line)}
   .verdict.win{background:linear-gradient(90deg,rgba(47,230,168,.14),rgba(47,230,168,.03));border-color:var(--mint-dim)}
@@ -1334,6 +1343,16 @@
       <span class="ret">Retour si gagne : ${money(returns[i])}</span></div>
       <div class="amt">${money(s)}<small>à miser</small></div></div>`).join('');
     const win=isSure&&profit>0;
+    // Checklist de vérification (anti "arb muri" : cotes qui bougent avant de miser)
+    let checklist='';
+    if(win){
+      const items=odds.map((o,i)=>`<li><label><input type="checkbox" class="chk-leg"> <span>Cote <b>${o.toFixed(2)}</b> chez <b>${bks[i]}</b> toujours disponible — miser <b>${money(stakes[i])}</b></span></label></li>`).join('');
+      checklist=`<div class="verify-box" id="verifyBox">
+        <div class="vb-head">⚠️ Avant de miser — vérifiez que rien n'a bougé</div>
+        <ul class="vb-list">${items}</ul>
+        <div class="vb-foot" id="vbFoot">Cochez chaque ligne après avoir confirmé la cote chez le bookmaker. Les cotes peuvent changer en quelques secondes.</div>
+      </div>`;
+    }
     $('#calcOut').innerHTML=`<div class="verdict ${win?'win':'lose'}">
       <div><div class="vlab">${win?'Profit garanti':'Pas de surebet'}</div>
       <div class="vval">${profit>=0?'+':''}${money(profit)}</div></div>
@@ -1343,7 +1362,19 @@
       <div class="summ"><div class="box"><div class="k">Total à investir</div><div class="v gold">${money(total)}</div></div>
       <div class="box"><div class="k">Retour garanti</div><div class="v mint">${money(guaranteedReturn)}</div></div></div>
       ${rounded&&win?'<div class="hint" style="color:var(--ink-dim)">Mises arrondies au multiple de '+step+' HTG. Le profit affiché est le profit réel après arrondi.</div>':''}
+      ${checklist}
       ${win?'':'<div class="hint">Σ des probabilités implicites ≥ 100% : aucune mise ne garantit un gain. Cherchez une cote adverse plus élevée.</div>'}`;
+    // interaction checklist
+    if(win){
+      const boxes=$$('#verifyBox .chk-leg');
+      const upd=()=>{
+        const done=boxes.filter(b=>b.checked).length;
+        const foot=$('#vbFoot');
+        if(done===boxes.length){ foot.innerHTML='✅ Tout est vérifié — vous pouvez placer vos mises en toute sécurité.'; foot.style.color='var(--mint)'; $('#verifyBox').classList.add('vb-ok'); }
+        else { foot.innerHTML='Cochez chaque ligne après avoir confirmé la cote chez le bookmaker. Les cotes peuvent changer en quelques secondes.'; foot.style.color=''; $('#verifyBox').classList.remove('vb-ok'); }
+      };
+      boxes.forEach(b=>b.addEventListener('change',upd));
+    }
     lastCalc={odds,bks,stakes,returns,total,guaranteedReturn,profit,roi,S};
     $('#saveBtn').disabled=false;
   }
