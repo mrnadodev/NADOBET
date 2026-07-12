@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+    window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -32,6 +32,7 @@
   "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=12813016,12812994,12813017,12813015&showCompetitionLogo=true&widgetTitle=FIFA+World+Cup%2C+Knockout&widgetTheme=dark"
 ]
 };
+
 </script>
 <style>
   :root{
@@ -101,6 +102,19 @@
   :root[data-theme="light"] .theme-toggle .ic-moon{display:block}
   .legend .chip b{color:var(--mint)}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .mini-bk-card{margin-top:22px}
+  .mini-bk-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mbk-box{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px}
+  .mbk-box.big{grid-column:1/-1;background:linear-gradient(90deg,rgba(245,197,66,.08),transparent)}
+  .mbk-k{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-faint);margin-bottom:6px}
+  .mbk-v{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--gold)}
+  .mbk-v.small{font-size:17px;color:var(--ink)}
+  .mbk-v.pos{color:var(--mint)}.mbk-v.neg{color:var(--red)}
+  .mbk-stat-row{display:flex;gap:10px;margin-top:12px}
+  .mbk-stat{flex:1;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;text-align:center}
+  .mbk-stat .ms-k{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-bottom:4px}
+  .mbk-stat .ms-v{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink)}
+  .mbk-hint{font-size:11px;color:var(--ink-faint);margin-top:11px;line-height:1.5;text-align:center}
   @media(max-width:980px){.cols{grid-template-columns:1fr}}
   .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
   .card-head{padding:18px 20px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -747,6 +761,36 @@
         <table><thead><tr><th>Cote adverse</th><th>Surebet</th><th>ROI garanti</th><th>Statut</th></tr></thead>
           <tbody id="detTable"></tbody></table>
         <div class="hint"><b>Lecture :</b> chaque ligne verte est exploitable. Reportez-la dans le calculateur pour connaître vos mises.</div>
+      </div>
+    </div>
+
+    <!-- MINI-RÉSUMÉ CAISSE -->
+    <div class="card mini-bk-card" id="miniBkCard">
+      <div class="card-head">
+        <div class="title"><span class="num" style="background:var(--gold)">₲</span>
+          <div><h2>Ma caisse</h2><span class="sub">Aperçu rapide de votre capital</span></div></div>
+      </div>
+      <div class="card-body">
+        <div class="mini-bk-grid">
+          <div class="mbk-box big">
+            <div class="mbk-k">Solde actuel</div>
+            <div class="mbk-v" id="mbkBalance">—</div>
+          </div>
+          <div class="mbk-box">
+            <div class="mbk-k">Déposé (net)</div>
+            <div class="mbk-v small" id="mbkDeposited">—</div>
+          </div>
+          <div class="mbk-box">
+            <div class="mbk-k">Profit paris</div>
+            <div class="mbk-v small" id="mbkProfit">—</div>
+          </div>
+        </div>
+        <div class="mbk-stat-row">
+          <div class="mbk-stat"><span class="ms-k">En attente</span><span class="ms-v" id="mbkPending">—</span></div>
+          <div class="mbk-stat"><span class="ms-k">Réussite</span><span class="ms-v" id="mbkWinrate">—</span></div>
+          <div class="mbk-stat"><span class="ms-k">Paris</span><span class="ms-v" id="mbkCount">—</span></div>
+        </div>
+        <div class="mbk-hint" id="mbkHint">Ajoutez un dépôt dans la section « Caisse » pour suivre votre capital.</div>
       </div>
     </div>
 
@@ -1679,6 +1723,25 @@
     const gr=$('#bkGrowth');
     gr.textContent=deposits>0?((growth>=0?'+':'')+growth.toFixed(2)+'%'):'—';
     gr.className='pv '+(growth>0?'pos':growth<0?'neg':'');
+
+    // Mini-résumé (colonne gauche)
+    const settledAll=history.filter(h=>h.status==='won'||h.status==='lost');
+    const pending=history.filter(h=>(h.status||'pending')==='pending').length;
+    const wins=history.filter(h=>h.status==='won').length;
+    const winrate=settledAll.length?(wins/settledAll.length*100):0;
+    if($('#mbkBalance')){
+      const mb=$('#mbkBalance');
+      mb.textContent=bankMoves.length?htg(balance):'—';
+      mb.className='mbk-v '+(bankMoves.length?(balance>=0?'':'neg'):'');
+      $('#mbkDeposited').textContent=bankMoves.length?htg(netDeposited):'—';
+      const mp=$('#mbkProfit');
+      mp.textContent=(betProfit>=0?'+':'')+htg(betProfit);
+      mp.className='mbk-v small '+(betProfit>0?'pos':betProfit<0?'neg':'');
+      $('#mbkPending').textContent=pending;
+      $('#mbkWinrate').textContent=settledAll.length?winrate.toFixed(0)+'%':'—';
+      $('#mbkCount').textContent=history.length;
+      $('#mbkHint').style.display=bankMoves.length?'none':'block';
+    }
 
     // liste des mouvements (récents en haut)
     const box=$('#bkMoves');
