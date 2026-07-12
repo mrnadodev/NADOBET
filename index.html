@@ -22,16 +22,8 @@
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
     ADMIN_EMAIL: "mrnado.trading@gmail.com",
-    // (Optionnel) Scores en direct : collez ici une ou plusieurs URL de widget
-    // (l'attribut src="..." de l'iframe SofaScore, FcTables, ScoreBat, etc.).
-    // Pour PLUSIEURS ligues, séparez les URL par une virgule, chacune entre guillemets.
-    // Exemple : ["https://widgets.sofascore.com/...ligue1", "https://widgets.sofascore.com/...laliga"]
-    // Laissez le tableau vide [] pour masquer la section.
-   // SCORES_WIDGET_URLS: [
-  //"https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=16363633,16363634,16363635,16363636,16363238,16363242,16363236,16363243,16363246,16363244&showCompetitionLogo=true&widgetTitle=Premier+League&widgetTheme=dark",
-  //"https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=12813016,12812994,12813017,12813015&showCompetitionLogo=true&widgetTitle=FIFA+World+Cup%2C+Knockout&widgetTheme=dark"
-//]
-};
+  };
+
 </script>
 <style>
   :root{
@@ -721,6 +713,7 @@
       <div class="chip" id="userChip" style="display:none">👤 <b id="userEmail">—</b></div>
       <button class="btn ghost" id="logoutBtn" style="display:none;padding:6px 14px;font-size:12px">Déconnexion</button>
       <span class="chip" id="syncChip" style="display:none">☁️ <b id="syncState">Synchronisé</b></span>
+      <a href="https://www.sofascore.com/" target="_blank" rel="noopener" class="btn ghost" id="statsBtn" style="padding:6px 14px;font-size:12px;text-decoration:none">📊 Scores & stats ↗</a>
       <button class="btn primary" id="publishBtn" style="display:none;padding:6px 14px;font-size:12px">📢 Publier un surebet</button>
     </div>
   </header>
@@ -951,27 +944,24 @@
     </div>
   </div>
 
-  <!-- ===== SCORES EN DIRECT ===== -->
-  <div class="card scores-card" id="scoresCard">
+  <!-- ===== CHAT COMMUNAUTAIRE ===== -->
+  <div class="card chat-card" id="chatCard">
     <div class="card-head">
       <div class="title"><span class="num">5</span>
-        <div><h2>Scores en direct</h2><span class="sub">Widget de résultats en temps réel</span></div></div>
-      <button class="eye-btn on" id="scoresEye" title="Afficher / masquer" aria-label="Afficher ou masquer les scores">
-        <svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        <svg class="eye-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-      </button>
+        <div><h2 style="display:flex;align-items:center;gap:10px">Chat communautaire
+          <button class="eye-btn on" id="chatEye" title="Afficher / masquer" aria-label="Afficher ou masquer le chat">
+            <svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </h2><span class="sub">Discutez avec les autres parieurs · en direct</span></div></div>
     </div>
     <div class="card-body">
-      <div id="scoresStatsBar" class="scores-stats-bar" style="display:none">
-        <span class="ssb-txt">🔄 Scores actualisés toutes les 60 s · pour les stats détaillées (tirs, corners…) :</span>
-        <a id="scoresStatsLink" href="https://www.sofascore.com/" target="_blank" rel="noopener" class="btn primary ssb-btn">📊 Voir les stats sur SofaScore ↗</a>
+      <div id="chatMessages" class="chat-messages"><div class="chat-loading">Chargement…</div></div>
+      <div class="chat-compose">
+        <input type="text" id="chatInput" placeholder="Écrivez un message…" maxlength="500" autocomplete="off">
+        <button class="btn primary" id="chatSend" style="padding:10px 18px">Envoyer</button>
       </div>
-      <div id="scoresMount" class="scores-mount"></div>
-      <div id="scoresPlaceholder" class="scores-placeholder">
-        <div class="sp-ico">📡</div>
-        <div class="sp-title">Aucun widget configuré</div>
-        <div class="sp-txt">Pour afficher les scores en direct : ouvrez un site de scores (SofaScore, FcTables, ScoreBat…), copiez le lien <b>src</b> du widget iframe. Pour plusieurs ligues, ajoutez plusieurs adresses dans <b>SCORES_WIDGET_URLS</b> en haut du fichier, séparées par des virgules.</div>
-      </div>
+      <div class="chat-foot">⚠️ Restez courtois. Les messages sont visibles par tous les utilisateurs. L'administrateur peut supprimer tout message.</div>
     </div>
   </div>
 
@@ -2636,104 +2626,6 @@
     $('#histEye').classList.remove('on');
     $('#histCard').classList.add('hist-collapsed');
   }}catch(e){}
-
-  // Scores en direct : injecte un ou plusieurs widgets
-  (function(){
-    // Compatibilité : accepte SCORES_WIDGET_URLS (liste) ou l'ancien SCORES_WIDGET_URL (unique)
-    let urls=[];
-    if(Array.isArray(cfg.SCORES_WIDGET_URLS)) urls=cfg.SCORES_WIDGET_URLS.slice();
-    else if(cfg.SCORES_WIDGET_URLS) urls=[cfg.SCORES_WIDGET_URLS];
-    if(cfg.SCORES_WIDGET_URL) urls.push(cfg.SCORES_WIDGET_URL);
-    urls=urls.map(u=>(u||'').trim()).filter(u=>/^https:\/\//i.test(u));
-
-    const mount=$('#scoresMount'), ph=$('#scoresPlaceholder');
-    if(urls.length){
-      ph.style.display='none';
-      $('#scoresStatsBar').style.display='flex';
-      mount.innerHTML='';
-
-      // Extrait un titre lisible depuis le paramètre widgetTitle de l'URL
-      function titleOf(u,idx){
-        try{
-          const m=u.match(/[?&]widgetTitle=([^&]+)/i);
-          if(m) return decodeURIComponent(m[1].replace(/\+/g,' '));
-        }catch(e){}
-        return 'Ligue '+(idx+1);
-      }
-
-      // Barre d'onglets
-      const tabs=document.createElement('div'); tabs.className='scores-tabs';
-      // Conteneur des panneaux
-      const panels=document.createElement('div'); panels.className='scores-panels';
-
-      urls.forEach((u,i)=>{
-        const title=titleOf(u,i);
-        // onglet
-        const tab=document.createElement('button');
-        tab.className='scores-tab'+(i===0?' on':'');
-        tab.textContent=title; tab.dataset.idx=i;
-        tabs.appendChild(tab);
-        // panneau (iframe chargé à la demande)
-        const panel=document.createElement('div');
-        panel.className='scores-panel'+(i===0?' on':'');
-        panel.dataset.idx=i; panel.dataset.url=u;
-        const frame=document.createElement('div'); frame.className='scores-frame';
-        panel.appendChild(frame);
-        panels.appendChild(panel);
-      });
-      mount.appendChild(tabs); mount.appendChild(panels);
-
-      function loadPanel(panel){
-        if(panel.dataset.loaded)return;
-        const ifr=document.createElement('iframe');
-        ifr.src=panel.dataset.url; ifr.loading='lazy'; ifr.referrerPolicy='no-referrer-when-downgrade';
-        ifr.setAttribute('title','Scores en direct'); ifr.setAttribute('scrolling','yes');
-        panel.querySelector('.scores-frame').appendChild(ifr);
-        panel.dataset.loaded='1';
-      }
-      // recharge le widget de l'onglet actif (pour forcer la mise à jour des scores)
-      function refreshActivePanel(){
-        const active=panels.querySelector('.scores-panel.on');
-        if(!active || !active.dataset.loaded)return;
-        // ne rafraîchit pas si la section est masquée (œil fermé) ou l'onglet arrière-plan
-        if(card.classList.contains('hist-collapsed'))return;
-        if(document.hidden)return;
-        const ifr=active.querySelector('iframe');
-        if(ifr){
-          // recharge en réassignant la source (garde la position d'onglet)
-          const src=ifr.src;
-          ifr.src=src;
-        }
-      }
-      // charge le premier
-      loadPanel(panels.querySelector('.scores-panel.on'));
-      // rafraîchissement automatique toutes les 60 secondes (onglet actif seulement)
-      setInterval(refreshActivePanel, 60000);
-
-      tabs.querySelectorAll('.scores-tab').forEach(tab=>{
-        tab.addEventListener('click',()=>{
-          const idx=tab.dataset.idx;
-          tabs.querySelectorAll('.scores-tab').forEach(t=>t.classList.toggle('on',t===tab));
-          panels.querySelectorAll('.scores-panel').forEach(p=>{
-            const active=p.dataset.idx===idx;
-            p.classList.toggle('on',active);
-            if(active) loadPanel(p);
-          });
-        });
-      });
-    }else{
-      mount.style.display='none';
-    }
-    // Toggle œil
-    const eye=$('#scoresEye'), card=$('#scoresCard');
-    try{ if(localStorage.getItem('nadobet_scores_visible')==='0'){ eye.classList.remove('on'); card.classList.add('hist-collapsed'); } }catch(e){}
-    eye.addEventListener('click',()=>{
-      const on=!eye.classList.contains('on');
-      eye.classList.toggle('on',on);
-      card.classList.toggle('hist-collapsed',!on);
-      try{localStorage.setItem('nadobet_scores_visible',on?'1':'0');}catch(e){}
-    });
-  })();
 
   $('#betDate').value=new Date().toISOString().slice(0,10);
   buildIssueBlocks();
