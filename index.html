@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -319,6 +319,10 @@
   .u-btn.ok:hover{background:rgba(47,230,168,.12)}
   .u-btn.block{color:var(--red);border-color:rgba(255,93,108,.3)}
   .u-btn.block:hover{background:rgba(255,93,108,.1)}
+  .u-btn.pub{color:var(--gold);border-color:rgba(245,197,66,.3)}
+  .u-btn.pub:hover{background:rgba(245,197,66,.12)}
+  .u-btn.pub.on{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+  .u-badge.pub-badge{background:rgba(245,197,66,.14);color:var(--gold);margin-left:5px}
   .users-empty{text-align:center;color:var(--ink-faint);font-size:11.5px;font-family:var(--mono);padding:20px}
   .live-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:pulse 1.6s infinite}
   .admin-close{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;
@@ -2060,11 +2064,12 @@
   function showGate(){$('#authGate').classList.remove('hidden');
     $('#userChip').style.display='none';$('#logoutBtn').style.display='none';$('#syncChip').style.display='none';}
   // Vérifie le statut du compte (approuvé / en attente / bloqué)
+  let currentRole='user'; // 'user' | 'publisher' (admin géré séparément)
   async function fetchAccountStatus(user){
     // L'admin est toujours autorisé, sans dépendre de la table
-    if(isAdmin(user)) return 'approved';
+    if(isAdmin(user)){ currentRole='admin'; return 'approved'; }
     try{
-      const {data,error}=await sb.from('profiles').select('status').eq('id',user.id).single();
+      const {data,error}=await sb.from('profiles').select('status,role').eq('id',user.id).single();
       if(error){
         // Profil pas encore créé : on tente de le créer en "pending"
         if(error.code==='PGRST116'||/no rows/i.test(error.message||'')){
@@ -2073,9 +2078,11 @@
         }
         console.error(error); return 'pending';
       }
+      currentRole=(data&&data.role)||'user';
       return (data&&data.status)||'pending';
     }catch(e){ console.error(e); return 'pending'; }
   }
+  function canPublish(){ return currentRole==='admin' || currentRole==='publisher'; }
 
   function showAccessScreen(kind, email){
     // kind: 'pending' | 'blocked'
@@ -2125,7 +2132,7 @@
     $('#userChip').title=user.email;
     $('#logoutBtn').style.display='';
     $('#adminHistBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
-    $('#publishBtn').style.display = isAdmin(user) ? 'inline-flex' : 'none';
+    $('#publishBtn').style.display = canPublish() ? 'inline-flex' : 'none';
     await loadHistory();
     await loadBankroll();
     renderHistory();
@@ -2425,7 +2432,7 @@
   }
   function closePublish(){ $('#pubModal').style.display='none'; }
   async function sendPublish(){
-    if(!sb||!isAdmin(currentUser))return;
+    if(!sb||!canPublish())return;
     const title=($('#pubTitle').value||'').trim();
     if(!title){ showToast('Donnez un titre au surebet',true); return; }
     const legs=$$('#pubLegs .pub-leg-row').map(r=>({
@@ -2545,6 +2552,7 @@
     currentUser=null;history=[];renderHistory();showGate();
     $('#adminHistBtns').style.display='none';
     $('#publishBtn').style.display='none';
+    currentRole='user';
     $('#signalPopup').style.display='none';
     $('#authEmail').value='';$('#authPass').value='';clearAuthError();
   }
@@ -2656,11 +2664,13 @@
   function renderUsers(users){
     const list=$('#usersList');
     const pending=users.filter(u=>u.status==='pending').length;
-    $('#usersSummary').textContent=users.length+' compte(s) · '+pending+' en attente';
+    const publishers=users.filter(u=>u.role==='publisher').length;
+    $('#usersSummary').textContent=users.length+' compte(s) · '+pending+' en attente · '+publishers+' publisher(s)';
     if(!users.length){ list.innerHTML='<div class="users-empty">Aucun utilisateur inscrit.</div>'; return; }
     const labels={approved:'Autorisé',pending:'En attente',blocked:'Bloqué'};
     list.innerHTML=users.map(u=>{
       const st=u.status||'pending';
+      const isPub=u.role==='publisher';
       const initial=((u.email||'?')[0]||'?').toUpperCase();
       const me=(currentUser&&u.id===currentUser.id);
       let actions='';
@@ -2668,16 +2678,34 @@
       else {
         if(st!=='approved') actions+='<button class="u-btn ok" data-approve="'+u.id+'">Autoriser</button>';
         if(st!=='blocked') actions+='<button class="u-btn block" data-block="'+u.id+'">Bloquer</button>';
+        // toggle publisher (seulement pour comptes approuvés)
+        if(st==='approved'){
+          actions += isPub
+            ? '<button class="u-btn pub on" data-unpub="'+u.id+'">★ Publisher</button>'
+            : '<button class="u-btn pub" data-pub="'+u.id+'">☆ Publisher</button>';
+        }
       }
       return `<div class="user-row">
         <div class="u-av">${initial}</div>
         <div class="u-meta"><div class="u-mail">${u.email||'(sans email)'}</div>
-          <span class="u-badge ${st}">${labels[st]||st}</span></div>
+          <span class="u-badge ${st}">${labels[st]||st}</span>${isPub?'<span class="u-badge pub-badge">Publisher</span>':''}</div>
         <div class="u-actions">${actions}</div>
       </div>`;
     }).join('');
     $$('#usersList [data-approve]').forEach(b=>b.addEventListener('click',()=>setUserStatus(b.dataset.approve,'approved')));
     $$('#usersList [data-block]').forEach(b=>b.addEventListener('click',()=>setUserStatus(b.dataset.block,'blocked')));
+    $$('#usersList [data-pub]').forEach(b=>b.addEventListener('click',()=>setUserRole(b.dataset.pub,'publisher')));
+    $$('#usersList [data-unpub]').forEach(b=>b.addEventListener('click',()=>setUserRole(b.dataset.unpub,'user')));
+  }
+
+  async function setUserRole(id,role){
+    if(!sb||!isAdmin(currentUser))return;
+    try{
+      const {error}=await sb.from('profiles').update({role}).eq('id',id);
+      if(error)throw error;
+      showToast(role==='publisher'?'Publisher activé ✓':'Publisher retiré');
+      loadUsers();
+    }catch(err){ console.error(err); showToast('Action impossible',true); }
   }
 
   async function setUserStatus(id,status){
