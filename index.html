@@ -18,10 +18,18 @@
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
   window.NADOBET_CONFIG = {
+
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
     ADMIN_EMAIL: "mrnado.trading@gmail.com",
+
+    /* ── Optionnel : notification Telegram ──
+       Quand l'admin publie un surebet, un message d'alerte est envoyé
+       automatiquement dans votre canal Telegram (sans les détails du surebet).
+       Laissez vide "" pour désactiver. Voir le guide pour créer le bot. */
+    TELEGRAM_BOT_TOKEN: "8995154321:AAE9LxkU9T9t0SuVzermRoGyt2bg3eidNtY",   // ex : "123456:ABC-DEF..."
+    TELEGRAM_CHAT_ID:   "@nadobet_surebets"    // ex : "@nadobet_surebets" ou "-1001234567890"
   };
 
 </script>
@@ -2435,8 +2443,24 @@
       });
       if(error)throw error;
       showToast('Surebet publié ✓');
+      notifyTelegram();  // alerte Telegram (sans les détails)
       closePublish();
     }catch(err){ console.error(err); showToast('Échec de la publication',true); }
+  }
+
+  // Envoie une alerte générique dans le canal Telegram (pas de détails du surebet)
+  async function notifyTelegram(){
+    const token=(cfg.TELEGRAM_BOT_TOKEN||'').trim();
+    const chat=(cfg.TELEGRAM_CHAT_ID||'').trim();
+    if(!token||!chat)return; // Telegram non configuré : on ignore
+    const text='🔔 Surebet détecté !\nVérifie vite ton dashboard NADOBET pour voir les détails. ⚽💰';
+    try{
+      await fetch('https://api.telegram.org/bot'+token+'/sendMessage',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:chat, text})
+      });
+    }catch(err){ console.error('Telegram:',err); }
   }
 
   // Nettoyage manuel des surebets expirés (admin)
