@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
- window.NADOBET_CONFIG = {
+  window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -104,6 +104,20 @@
   :root[data-theme="light"] .theme-toggle .ic-moon{display:block}
   .legend .chip b{color:var(--mint)}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  /* Mini-caisse : remplit l'espace vide en colonne gauche, masquée sur mobile */
+  .mini-caisse{margin-top:22px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .mini-caisse .mc-head{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.02em;margin-bottom:14px}
+  .mini-caisse .mc-balance{display:flex;flex-direction:column;gap:4px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line-soft)}
+  .mini-caisse .mc-k{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-faint)}
+  .mini-caisse .mc-v{font-family:var(--mono);font-size:30px;font-weight:700;color:var(--gold)}
+  .mini-caisse .mc-v.neg{color:var(--red)}
+  .mini-caisse .mc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .mini-caisse .mc-cell{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+  .mini-caisse .mc-ck{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint)}
+  .mini-caisse .mc-cv{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--ink)}
+  .mini-caisse .mc-cv.pos{color:var(--mint)}.mini-caisse .mc-cv.neg{color:var(--red)}
+  .mini-caisse .mc-hint{font-size:11px;color:var(--ink-faint);line-height:1.5;text-align:center;margin-top:4px}
+  @media(max-width:980px){.mini-caisse{display:none}}
   @media(max-width:980px){.cols{grid-template-columns:1fr}}
   .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
   .card-head{padding:18px 20px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -750,6 +764,23 @@
         <table><thead><tr><th>Cote adverse</th><th>Surebet</th><th>ROI garanti</th><th>Statut</th></tr></thead>
           <tbody id="detTable"></tbody></table>
         <div class="hint"><b>Lecture :</b> chaque ligne verte est exploitable. Reportez-la dans le calculateur pour connaître vos mises.</div>
+
+        <div class="mini-caisse" id="miniCaisse">
+          <div class="mc-head">💰 Ma caisse</div>
+          <div class="mc-balance">
+            <span class="mc-k">Solde actuel</span>
+            <span class="mc-v" id="mcBalance">—</span>
+          </div>
+          <div class="mc-row">
+            <div class="mc-cell"><span class="mc-ck">Déposé (net)</span><span class="mc-cv" id="mcDeposited">—</span></div>
+            <div class="mc-cell"><span class="mc-ck">Profit paris</span><span class="mc-cv" id="mcProfit">—</span></div>
+          </div>
+          <div class="mc-row">
+            <div class="mc-cell"><span class="mc-ck">En attente</span><span class="mc-cv" id="mcPending">—</span></div>
+            <div class="mc-cell"><span class="mc-ck">Réussite</span><span class="mc-cv" id="mcWinrate">—</span></div>
+          </div>
+          <div class="mc-hint" id="mcHint">Ajoutez un dépôt dans la section « Caisse » pour suivre votre capital.</div>
+        </div>
       </div>
     </div>
 
@@ -1682,6 +1713,24 @@
     const gr=$('#bkGrowth');
     gr.textContent=deposits>0?((growth>=0?'+':'')+growth.toFixed(2)+'%'):'—';
     gr.className='pv '+(growth>0?'pos':growth<0?'neg':'');
+
+    // Mini-caisse (colonne gauche, masquée sur mobile)
+    if($('#mcBalance')){
+      const settledAll=history.filter(h=>h.status==='won'||h.status==='lost');
+      const pending=history.filter(h=>(h.status||'pending')==='pending').length;
+      const wins=history.filter(h=>h.status==='won').length;
+      const winrate=settledAll.length?(wins/settledAll.length*100):0;
+      const mb=$('#mcBalance');
+      mb.textContent=bankMoves.length?htg(balance):'—';
+      mb.className='mc-v '+(bankMoves.length&&balance<0?'neg':'');
+      $('#mcDeposited').textContent=bankMoves.length?htg(netDeposited):'—';
+      const mp=$('#mcProfit');
+      mp.textContent=(betProfit>=0?'+':'')+htg(betProfit);
+      mp.className='mc-cv '+(betProfit>0?'pos':betProfit<0?'neg':'');
+      $('#mcPending').textContent=pending;
+      $('#mcWinrate').textContent=settledAll.length?winrate.toFixed(0)+'%':'—';
+      $('#mcHint').style.display=bankMoves.length?'none':'block';
+    }
 
     // liste des mouvements (récents en haut)
     const box=$('#bkMoves');
