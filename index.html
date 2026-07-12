@@ -32,7 +32,6 @@
   "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=12813016,12812994,12813017,12813015&showCompetitionLogo=true&widgetTitle=FIFA+World+Cup%2C+Knockout&widgetTheme=dark"
 ]
 };
-
 </script>
 <style>
   :root{
@@ -134,6 +133,17 @@
   .det-hero{text-align:center;padding:8px 0 18px}
   .det-hero .big{font-family:var(--mono);font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--mint)}
   .det-hero .cap{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-faint);margin-top:8px}
+  .odds-conv{margin-bottom:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2);overflow:hidden}
+  .odds-conv summary{cursor:pointer;padding:12px 15px;font-size:13px;font-weight:600;color:var(--ink-dim);
+    list-style:none;user-select:none;transition:.15s}
+  .odds-conv summary::-webkit-details-marker{display:none}
+  .odds-conv summary:hover{color:var(--ink)}
+  .odds-conv[open] summary{border-bottom:1px solid var(--line-soft);color:var(--mint)}
+  .odds-conv .oc-body{padding:15px}
+  .odds-conv .oc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  @media(max-width:560px){.odds-conv .oc-grid{grid-template-columns:1fr}}
+  .odds-conv .oc-note{font-size:11.5px;color:var(--ink-faint);margin-top:11px;line-height:1.5}
+  .odds-conv input.oc-bad{border-color:var(--red)}
   .thr-note{font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:var(--panel-2);border:1px dashed var(--line);
     border-radius:9px;padding:11px 14px;text-align:center;margin-bottom:6px}
   .thr-note b{color:var(--gold)}
@@ -663,6 +673,21 @@
         </div>
       </div>
       <div class="card-body">
+        <details class="odds-conv" id="oddsConv">
+          <summary>🔁 Convertisseur de cotes (décimale / fractionnaire / américaine)</summary>
+          <div class="oc-body">
+            <div class="oc-grid">
+              <label class="fld" style="margin:0"><span class="lab">Décimale</span>
+                <input type="text" id="ocDec" placeholder="ex : 2.50" inputmode="decimal"></label>
+              <label class="fld" style="margin:0"><span class="lab">Fractionnaire</span>
+                <input type="text" id="ocFrac" placeholder="ex : 3/2"></label>
+              <label class="fld" style="margin:0"><span class="lab">Américaine</span>
+                <input type="text" id="ocAmer" placeholder="ex : +150"></label>
+            </div>
+            <div class="oc-note" id="ocNote">Tapez dans un champ, les deux autres se calculent. La cote décimale est celle à utiliser dans le détecteur et le calculateur.</div>
+          </div>
+        </details>
+
         <div class="row r2" style="margin-bottom:16px">
           <label class="fld" style="margin:0"><span class="lab">Ma cote détectée</span>
             <input type="number" id="detOdd" value="2.00" step="0.01" min="1.01"></label>
@@ -701,6 +726,16 @@
           <label class="fld" style="margin:0" id="fixedLegWrap"><span class="lab">Jambe à fixer</span>
             <select id="fixedLeg"><option value="0">Issue 1</option><option value="1">Issue 2</option><option value="2">Issue 3</option></select></label>
         </div>
+
+        <label class="fld" style="margin-bottom:16px"><span class="lab">Arrondir les mises</span>
+          <select id="roundStep">
+            <option value="0">Aucun (mise exacte)</option>
+            <option value="1">À 1 HTG</option>
+            <option value="5">À 5 HTG</option>
+            <option value="10">À 10 HTG</option>
+            <option value="25">À 25 HTG</option>
+            <option value="50">À 50 HTG</option>
+          </select></label>
 
         <label class="fld"><span class="lab">Date du pari</span><input type="date" id="betDate"></label>
 
@@ -1035,6 +1070,68 @@
   // Conservé pour compatibilité (les écritures passent désormais par les fonctions db*)
   function persist(){}
 
+  /* ---- CONVERTISSEUR DE COTES ---- */
+  // Décimale <-> Fractionnaire <-> Américaine
+  function decToFrac(d){
+    if(!(d>1))return '';
+    const val=d-1;
+    // approximation en fraction simple
+    let bestN=1,bestD=1,err=Infinity;
+    for(let den=1;den<=50;den++){
+      const num=Math.round(val*den);
+      if(num<1)continue;
+      const e=Math.abs(val-num/den);
+      if(e<err){err=e;bestN=num;bestD=den;}
+      if(e<1e-9)break;
+    }
+    // simplifie
+    const g=(a,b)=>b?g(b,a%b):a; const k=g(bestN,bestD);
+    return (bestN/k)+'/'+(bestD/k);
+  }
+  function decToAmer(d){
+    if(!(d>1))return '';
+    if(d>=2) return '+'+Math.round((d-1)*100);
+    return '-'+Math.round(100/(d-1));
+  }
+  function fracToDec(f){
+    const m=(f||'').trim().match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+    if(!m)return null;
+    const num=parseFloat(m[1]),den=parseFloat(m[2]);
+    if(!(den>0))return null;
+    return 1+num/den;
+  }
+  function amerToDec(a){
+    const s=(a||'').trim().replace(/\s/g,'');
+    const m=s.match(/^([+-]?)(\d+(?:\.\d+)?)$/);
+    if(!m)return null;
+    const sign=m[1], val=parseFloat(m[2]);
+    if(!(val>0))return null;
+    if(sign==='-') return 1+100/val;
+    return 1+val/100; // + ou pas de signe = positif
+  }
+  function setupOddsConverter(){
+    const dec=$('#ocDec'), frac=$('#ocFrac'), amer=$('#ocAmer');
+    if(!dec)return;
+    let lock=false;
+    function fillFrom(d){
+      if(!(d>1)){ return; }
+      lock=true;
+      dec.value=d.toFixed(2);
+      frac.value=decToFrac(d);
+      amer.value=decToAmer(d);
+      lock=false;
+    }
+    dec.addEventListener('input',()=>{ if(lock)return; const d=parseFloat(dec.value); const ok=d>1;
+      dec.classList.toggle('oc-bad',dec.value!==''&&!ok);
+      if(ok){ lock=true; frac.value=decToFrac(d); amer.value=decToAmer(d); lock=false; } });
+    frac.addEventListener('input',()=>{ if(lock)return; const d=fracToDec(frac.value);
+      frac.classList.toggle('oc-bad',frac.value!==''&&!d);
+      if(d){ fillFrom(d); frac.classList.remove('oc-bad'); } });
+    amer.addEventListener('input',()=>{ if(lock)return; const d=amerToDec(amer.value);
+      amer.classList.toggle('oc-bad',amer.value!==''&&!d);
+      if(d){ fillFrom(d); amer.classList.remove('oc-bad'); } });
+  }
+
   /* ---- DÉTECTEUR ---- */
   function minComplementOdd(a,thrPct){const t=thrPct/100;const rhs=1/(1+t)-1/a;if(rhs<=0)return Infinity;return 1/rhs;}
   function roiFor(a,b){const S=1/a+1/b;return (1-S)/S*100;}
@@ -1149,6 +1246,16 @@
     let stakes=[],total=0;
     if(mode==='equal'){total=amount;stakes=odds.map(o=>total*(1/o)/S);}
     else{const fi=Math.min(parseInt($('#fixedLeg').value),legs-1);const target=amount*odds[fi];stakes=odds.map(o=>target/o);total=stakes.reduce((s,x)=>s+x,0);}
+
+    // Arrondi des mises (optionnel) — puis recalcul du profit RÉEL sur mises arrondies
+    const step=parseFloat($('#roundStep').value)||0;
+    let rounded=false;
+    if(step>0){
+      stakes=stakes.map(s=>Math.round(s/step)*step);
+      total=stakes.reduce((s,x)=>s+x,0);
+      rounded=true;
+    }
+
     const returns=stakes.map((s,i)=>s*odds[i]);const guaranteedReturn=Math.min(...returns);
     const profit=guaranteedReturn-total;const roi=total>0?profit/total*100:0;
     const labels=['1','2','3'];const fi=mode==='fixed'?Math.min(parseInt($('#fixedLeg').value),legs-1):-1;
@@ -1167,6 +1274,7 @@
       <div class="stake-list">${stakeHTML}</div>
       <div class="summ"><div class="box"><div class="k">Total à investir</div><div class="v gold">${money(total)}</div></div>
       <div class="box"><div class="k">Retour garanti</div><div class="v mint">${money(guaranteedReturn)}</div></div></div>
+      ${rounded&&win?'<div class="hint" style="color:var(--ink-dim)">Mises arrondies au multiple de '+step+' HTG. Le profit affiché est le profit réel après arrondi.</div>':''}
       ${win?'':'<div class="hint">Σ des probabilités implicites ≥ 100% : aucune mise ne garantit un gain. Cherchez une cote adverse plus élevée.</div>'}`;
     lastCalc={odds,bks,stakes,returns,total,guaranteedReturn,profit,roi,S};
     $('#saveBtn').disabled=false;
@@ -1529,7 +1637,7 @@
 
   /* ---- EVENTS ---- */
   ['#detOdd','#detThr'].forEach(s=>$(s).addEventListener('input',renderDetector));
-  ['#amount','#fixedLeg'].forEach(s=>$(s).addEventListener('input',renderCalc));
+  ['#amount','#fixedLeg','#roundStep'].forEach(s=>$(s).addEventListener('input',renderCalc));
   $$('#segLegs button').forEach(b=>b.addEventListener('click',()=>{
     $$('#segLegs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     legs=parseInt(b.dataset.legs);buildIssueBlocks();renderCalc();}));
@@ -2249,6 +2357,7 @@
 
   $('#betDate').value=new Date().toISOString().slice(0,10);
   buildIssueBlocks();
+  setupOddsConverter();
   renderDetector();
   renderCalc();
   renderHistory();
