@@ -357,6 +357,18 @@
   .perf-box .pv .pv-pct{font-size:13px;font-weight:600;opacity:.85}
   .perf-box .pv.pos{color:var(--mint)}.perf-box .pv.neg{color:var(--red)}
   .perf-chart-wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:15px 16px 10px}
+  .bk-breakdown-wrap{margin-top:16px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:15px 16px}
+  .bkb-head{font-size:12px;font-weight:600;color:var(--ink-dim);letter-spacing:.02em;margin-bottom:12px}
+  .bkb-table-wrap{overflow-x:auto}
+  .bkb-table{width:100%;border-collapse:collapse;font-size:13px}
+  .bkb-table th{text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-faint);padding:6px 10px;border-bottom:1px solid var(--line-soft);font-weight:600}
+  .bkb-table th:first-child{text-align:left}
+  .bkb-table td{text-align:right;padding:9px 10px;font-family:var(--mono);border-bottom:1px solid var(--line-soft)}
+  .bkb-table td:first-child{text-align:left;font-family:var(--sans);font-weight:600;color:var(--ink)}
+  .bkb-table tr:last-child td{border-bottom:none}
+  .bkb-table .pos{color:var(--mint)}.bkb-table .neg{color:var(--red)}
+  .bkb-empty{text-align:center;color:var(--ink-faint);font-size:12px;font-family:var(--mono);padding:16px}
   .perf-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
   .pch-title{font-size:12px;font-weight:600;color:var(--ink-dim);letter-spacing:.02em}
   .pch-toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px}
@@ -836,13 +848,23 @@
         </div>
         <div class="perf-chart-wrap">
           <div class="perf-chart-head">
-            <span class="pch-title">Profit cumulé</span>
+            <span class="pch-title" id="pchTitle">Profit cumulé</span>
             <div class="pch-toggle" id="chartToggle">
-              <button class="pcht on" data-unit="htg">HTG</button>
-              <button class="pcht" data-unit="pct">%</button>
+              <button class="pcht on" data-unit="htg">Cumulé HTG</button>
+              <button class="pcht" data-unit="pct">Cumulé %</button>
+              <button class="pcht" data-unit="month">Par mois</button>
             </div>
           </div>
           <div id="perfChart" class="perf-chart"></div>
+        </div>
+        <div class="bk-breakdown-wrap" id="bkBreakdownWrap">
+          <div class="bkb-head">Répartition par bookmaker</div>
+          <div class="bkb-table-wrap">
+            <table class="bkb-table">
+              <thead><tr><th>Bookmaker</th><th>Paris</th><th>Misé</th><th>Profit</th><th>ROI</th></tr></thead>
+              <tbody id="bkBreakdown"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1510,6 +1532,43 @@
 
     drawProfitChart();
     renderBankroll();
+    renderBookmakerBreakdown();
+  }
+
+  // Répartition par bookmaker : mise et profit attribués à chaque bookmaker
+  function renderBookmakerBreakdown(){
+    const tb=$('#bkBreakdown'); if(!tb)return;
+    const map={}; // bk -> {bets:Set, staked, profit}
+    history.forEach(h=>{
+      const bks=h.bks||[], stakes=h.stakes||[];
+      const st=h.status||'pending';
+      const legProfit=computeProfit(h); // profit total du pari (0 si en attente)
+      // profit du pari attribué au bookmaker de la jambe gagnante n'est pas connu ;
+      // on répartit le profit du pari au prorata de la mise de chaque bookmaker
+      const totalStake=stakes.reduce((s,x)=>s+(x||0),0)||1;
+      bks.forEach((b,i)=>{
+        if(!b)return;
+        if(!map[b])map[b]={bets:new Set(),staked:0,profit:0};
+        map[b].bets.add(h.id);
+        map[b].staked+=(stakes[i]||0);
+        if(st==='won'||st==='lost'){
+          map[b].profit += legProfit*((stakes[i]||0)/totalStake);
+        }
+      });
+    });
+    const rows=Object.entries(map).sort((a,b)=>b[1].profit-a[1].profit);
+    if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="bkb-empty">Aucun pari enregistré.</td></tr>'; return; }
+    tb.innerHTML=rows.map(([bk,d])=>{
+      const roi=d.staked>0?(d.profit/d.staked*100):0;
+      const pc=d.profit>0?'pos':d.profit<0?'neg':'';
+      return `<tr>
+        <td>${bk}</td>
+        <td>${d.bets.size}</td>
+        <td>${money(d.staked)}</td>
+        <td class="${pc}">${d.profit>=0?'+':''}${money(d.profit)}</td>
+        <td class="${pc}">${roi>=0?'+':''}${roi.toFixed(2)}%</td>
+      </tr>`;
+    }).join('');
   }
 
   /* ===== CAISSE / BANKROLL ===== */
@@ -1599,6 +1658,7 @@
   let chartUnit='htg';
   function drawProfitChart(){
     const el=$('#perfChart');
+    if(chartUnit==='month'){ drawMonthlyChart(el); return; }
     // Série = profit cumulé sur les paris réglés, dans l'ordre chronologique
     const settled=history
       .filter(h=>h.status==='won'||h.status==='lost')
@@ -1651,6 +1711,61 @@
       <path d="${area}" fill="${lastPos?'rgba(47,230,168,.12)':'rgba(255,93,108,.10)'}"/>
       <path d="${line}" fill="none" stroke="${lastPos?'var(--mint)':'var(--red)'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
+    </svg>`;
+  }
+
+  // Graphique en barres : profit réalisé par mois
+  function drawMonthlyChart(el){
+    const settled=history.filter(h=>h.status==='won'||h.status==='lost');
+    if(settled.length<1){
+      el.innerHTML='<div class="perf-empty">Le graphique apparaîtra dès qu’un pari sera marqué « gagné » ou « perdu ».</div>';
+      return;
+    }
+    // regroupe par mois (YYYY-MM)
+    const byMonth={};
+    settled.forEach(h=>{
+      const key=(h.date||'').slice(0,7)||'?';
+      byMonth[key]=(byMonth[key]||0)+computeProfit(h);
+    });
+    const months=Object.keys(byMonth).sort();
+    const vals=months.map(m=>byMonth[m]);
+    const W=680,H=220,padL=64,padR=16,padT=16,padB=42;
+    const n=months.length;
+    let maxV=Math.max(0,...vals), minV=Math.min(0,...vals);
+    if(maxV===minV){maxV+=1;minV-=1;}
+    const span=maxV-minV||1;
+    const plotW=W-padL-padR, plotH=H-padT-padB;
+    const bw=Math.min(60, plotW/n*0.62);
+    const gap=plotW/n;
+    const y0=padT+plotH*(maxV/span); // position du zéro
+    const py=v=>padT+plotH*((maxV-v)/span);
+
+    const ML=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+    const label=m=>{ const p=m.split('-'); return p.length===2 ? ML[(+p[1])-1]+' '+p[0].slice(2) : m; };
+
+    // graduations
+    const ticks=[maxV,(maxV+minV)/2,minV];
+    const grid=ticks.map(t=>{
+      const y=py(t).toFixed(1);
+      return `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--line-soft)"/>
+        <text x="${padL-8}" y="${(+y+4)}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-faint)">${(t>=0?'+':'')+Math.round(t)}</text>`;
+    }).join('');
+
+    const bars=months.map((m,i)=>{
+      const v=vals[i];
+      const x=padL+gap*i+(gap-bw)/2;
+      const yTop=v>=0?py(v):py(0);
+      const h=Math.abs(py(v)-py(0));
+      const col=v>=0?'var(--mint)':'var(--red)';
+      return `<rect x="${x.toFixed(1)}" y="${yTop.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,h).toFixed(1)}"
+        rx="3" fill="${col}" opacity="0.85"><title>${label(m)} · ${(v>=0?'+':'')+money(v)} HTG</title></rect>
+        <text x="${(x+bw/2).toFixed(1)}" y="${(H-padB+16)}" text-anchor="middle" font-family="var(--mono)" font-size="9.5" fill="var(--ink-faint)">${label(m)}</text>`;
+    }).join('');
+
+    el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Profit par mois">
+      ${grid}
+      <line x1="${padL}" y1="${py(0).toFixed(1)}" x2="${W-padR}" y2="${py(0).toFixed(1)}" stroke="var(--ink-faint)" stroke-width="1"/>
+      ${bars}
     </svg>`;
   }
 
@@ -1784,7 +1899,9 @@
   $('#histEye').addEventListener('click',toggleHistory);
   $$('#chartToggle .pcht').forEach(b=>b.addEventListener('click',()=>{
     $$('#chartToggle .pcht').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on'); chartUnit=b.dataset.unit; drawProfitChart();
+    b.classList.add('on'); chartUnit=b.dataset.unit;
+    const t=$('#pchTitle'); if(t)t.textContent = chartUnit==='month'?'Profit par mois':'Profit cumulé';
+    drawProfitChart();
   }));
   $('#resetBtn').addEventListener('click',resetForm);
   $('#clearBtn').addEventListener('click',()=>{if(history.length&&confirm('Vider tout cet historique ? (supprime aussi côté cloud)')){history=[];renderHistory();dbClearAll();}});
