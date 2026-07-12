@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
- window.NADOBET_CONFIG = {
+  window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -208,6 +208,11 @@
   @media(max-width:640px){.signal-popup{right:12px;top:12px;font-size:12px;padding:11px 14px}}
   /* Cartes surebet dans la fenêtre */
   .sig-card{background:var(--panel-2);border:1px solid var(--mint-dim);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .sig-card.sig-done{opacity:.6;border-color:var(--line)}
+  .sig-card.sig-done .sig-title{color:var(--ink-dim)}
+  .sig-use.used{opacity:.85}
+  .sig-progress{font-family:var(--mono);font-size:11.5px;color:var(--mint);background:rgba(47,230,168,.08);
+    border:1px solid var(--mint-dim);border-radius:8px;padding:8px 12px;margin-bottom:12px;text-align:center}
   .sig-card:last-child{margin-bottom:0}
   .sig-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
   .sig-title{font-size:15px;font-weight:700;color:var(--ink)}
@@ -800,7 +805,7 @@
     </div>
     <div class="card-body">
       <div id="scoresStatsBar" class="scores-stats-bar" style="display:none">
-        <span class="ssb-txt">Pour les statistiques détaillées d'un match (tirs, corners, possession…) :</span>
+        <span class="ssb-txt">🔄 Scores actualisés toutes les 60 s · pour les stats détaillées (tirs, corners…) :</span>
         <a id="scoresStatsLink" href="https://www.sofascore.com/" target="_blank" rel="noopener" class="btn primary ssb-btn">📊 Voir les stats sur SofaScore ↗</a>
       </div>
       <div id="scoresMount" class="scores-mount"></div>
@@ -826,7 +831,7 @@
       <p class="edit-note">Ce surebet sera envoyé en direct à tous les utilisateurs en ligne, et restera visible quelques minutes pour ceux qui se connectent juste après.</p>
       <label class="fld"><span class="lab">Titre / Match</span><input type="text" id="pubTitle" placeholder="ex : PSG vs OM — 1X2"></label>
       <div class="row r2" style="margin-bottom:12px">
-        <label class="fld" style="margin:0"><span class="lab">ROI estimé (%)</span><input type="number" id="pubRoi" step="0.1" placeholder="ex : 4.5"></label>
+        <label class="fld" style="margin:0"><span class="lab">ROI calculé (%)</span><input type="text" id="pubRoi" readonly placeholder="— (auto)" style="background:var(--panel);color:var(--mint);font-weight:700"></label>
         <label class="fld" style="margin:0"><span class="lab">Validité (minutes)</span>
           <select id="pubTtl"><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option><option value="30">30 min</option></select></label>
       </div>
@@ -1643,7 +1648,7 @@
   }
 
   /* ===== SUREBETS EN DIRECT (signals) ===== */
-  let signalsChannel=null, activeSignals=[], signalsSeen={}, signalSweepTimer=null;
+  let signalsChannel=null, activeSignals=[], signalsSeen={}, signalsUsed={}, signalSweepTimer=null;
 
   function startSignals(user){
     if(!sb||signalsChannel)return;
@@ -1663,7 +1668,7 @@
   async function stopSignals(){
     if(signalsChannel){ try{await sb.removeChannel(signalsChannel);}catch(e){} signalsChannel=null; }
     if(signalSweepTimer){ clearInterval(signalSweepTimer); signalSweepTimer=null; }
-    activeSignals=[]; signalsSeen={}; updateSignalPopup();
+    activeSignals=[]; signalsSeen={}; signalsUsed={}; updateSignalPopup();
   }
   async function loadActiveSignals(){
     if(!sb)return;
@@ -1688,14 +1693,26 @@
     if(activeSignals.length!==before){ updateSignalPopup(); if($('#signalModal').style.display==='flex') renderSignals(); }
   }
   function unseenCount(){ return activeSignals.filter(s=>!signalsSeen[s.id]).length; }
+  function unusedCount(){ return activeSignals.filter(s=>!signalsUsed[s.id]).length; }
   function updateSignalPopup(blink){
     const pop=$('#signalPopup');
-    const unseen=unseenCount();
     if(activeSignals.length===0){ pop.style.display='none'; return; }
-    // le popup s'affiche s'il y a des surebets non encore vus
-    if(unseen>0){
+    const unseen=unseenCount();
+    const unused=unusedCount();
+    // Le popup reste visible tant qu'il y a des surebets non vus OU non encore utilisés
+    if(unseen>0 || unused>0){
       pop.style.display='flex';
-      $('#signalCount').textContent=unseen;
+      // le badge montre ce qu'il reste à traiter
+      const n = unseen>0 ? unseen : unused;
+      $('#signalCount').textContent=n;
+      // texte adapté : si tout est vu mais reste à utiliser
+      const label=pop.querySelector('.sp-label');
+      if(label){
+        label.textContent = unseen>0 ? 'Surebet détecté — cliquez pour voir'
+                                     : 'Encore '+unused+' surebet(s) à utiliser';
+      }
+      // clignote seulement s'il y a du non-vu
+      pop.style.animationPlayState = unseen>0 ? 'running' : 'paused';
     }else{
       pop.style.display='none';
     }
@@ -1703,19 +1720,29 @@
   function renderSignals(){
     const body=$('#signalBody');
     if(!activeSignals.length){ body.innerHTML='<div class="sig-empty">Aucun surebet actif pour le moment.</div>'; return; }
-    body.innerHTML=activeSignals.map(s=>{
+    const total=activeSignals.length;
+    const usedCount=activeSignals.filter(s=>signalsUsed[s.id]).length;
+    const header = total>1 ? `<div class="sig-progress">${usedCount}/${total} utilisé(s) · cliquez « Utiliser » sur chacun l'un après l'autre</div>` : '';
+    body.innerHTML=header+activeSignals.map(s=>{
       let legs=[];
       try{ legs=Array.isArray(s.legs)?s.legs:JSON.parse(s.legs||'[]'); }catch(e){ legs=[]; }
       const legsHtml=legs.map(l=>`<div class="sig-leg"><span>${(l.match||l.pick||'—')} <span class="sl-bk">· ${l.bk||''}</span></span><span class="sl-odd">${l.odd||''}</span></div>`).join('');
       const mins=Math.max(0,Math.round((new Date(s.expires_at).getTime()-Date.now())/60000));
       const canUse=legs.filter(l=>parseFloat(l.odd)>1).length>=2;
-      return `<div class="sig-card">
-        <div class="sig-top"><span class="sig-title">${s.title||'Surebet'}</span>
+      const used=signalsUsed[s.id];
+      let btn='';
+      if(canUse){
+        btn = used
+          ? `<button class="btn ghost sig-use used" data-use="${s.id}" style="width:100%;justify-content:center;margin-top:12px;font-size:13px">✓ Déjà utilisé — recharger</button>`
+          : `<button class="btn primary sig-use" data-use="${s.id}" style="width:100%;justify-content:center;margin-top:12px;font-size:13px">↧ Utiliser dans le calculateur</button>`;
+      }
+      return `<div class="sig-card${used?' sig-done':''}">
+        <div class="sig-top"><span class="sig-title">${used?'✓ ':''}${s.title||'Surebet'}</span>
           ${s.roi?`<span class="sig-roi">+${Number(s.roi).toFixed(2)}%</span>`:''}</div>
         <div class="sig-legs">${legsHtml||'<span style="color:var(--ink-faint);font-size:12px">Détails dans la note.</span>'}</div>
         ${s.note?`<div class="sig-note">📝 ${s.note}</div>`:''}
         <div class="sig-meta">Publié · expire dans ~${mins} min</div>
-        ${canUse?`<button class="btn primary sig-use" data-use="${s.id}" style="width:100%;justify-content:center;margin-top:12px;font-size:13px">↧ Utiliser dans le calculateur</button>`:''}
+        ${btn}
       </div>`;
     }).join('');
     $$('.sig-use').forEach(b=>b.addEventListener('click',()=>useSignalInCalc(b.dataset.use)));
@@ -1750,10 +1777,19 @@
     // titre → champ match 1
     if(s.title){ $('#match1').value=s.title; }
     renderCalc();
+
+    // marque comme utilisé (Option C)
+    signalsUsed[id]=true;
+
+    const remaining=activeSignals.filter(x=>!signalsUsed[x.id]).length;
     closeSignals();
-    // remonte vers le calculateur
     document.querySelector('#amount').scrollIntoView({behavior:'smooth',block:'center'});
-    showToast('Surebet chargé dans le calculateur ✓');
+    if(remaining>0){
+      showToast('Chargé ✓ — encore '+remaining+' surebet(s). Enregistrez, puis rouvrez le popup.');
+    }else{
+      showToast('Surebet chargé dans le calculateur ✓');
+    }
+    updateSignalPopup();
   }
   function openSignals(){
     activeSignals.forEach(s=>signalsSeen[s.id]=true);
@@ -1771,12 +1807,26 @@
       <span style="display:flex;gap:6px;align-items:center">
         <input type="number" class="pl-odd" step="0.01" placeholder="cote" style="width:78px" value="${odd||''}">
         <button type="button" class="plr-x" title="Retirer">✕</button></span>`;
-    wrap.querySelector('.plr-x').addEventListener('click',()=>wrap.remove());
+    wrap.querySelector('.plr-x').addEventListener('click',()=>{ wrap.remove(); computePubRoi(); });
+    wrap.querySelector('.pl-odd').addEventListener('input',computePubRoi);
     if(bk){ const sel=wrap.querySelector('.pl-bk'); if([...sel.options].some(o=>o.value===bk))sel.value=bk; }
     return wrap;
   }
+
+  // Calcule le ROI garanti à partir des cotes saisies (même formule que le calculateur)
+  function computePubRoi(){
+    const odds=$$('#pubLegs .pl-odd').map(el=>parseFloat(el.value)).filter(o=>o>1);
+    const field=$('#pubRoi');
+    if(odds.length<2){ field.value=''; field.dataset.roi=''; return; }
+    const S=odds.reduce((s,o)=>s+1/o,0);
+    const roi=(1-S)/S*100;
+    if(roi>0){ field.value='+'+roi.toFixed(2)+' %'; field.style.color='var(--mint)'; }
+    else { field.value=roi.toFixed(2)+' % (pas un surebet)'; field.style.color='var(--red)'; }
+    field.dataset.roi=roi.toFixed(2);
+  }
+
   function openPublish(){
-    $('#pubTitle').value=''; $('#pubRoi').value=''; $('#pubNote').value=''; $('#pubTtl').value='10';
+    $('#pubTitle').value=''; $('#pubRoi').value=''; $('#pubRoi').dataset.roi=''; $('#pubNote').value=''; $('#pubTtl').value='10';
     const box=$('#pubLegs'); box.innerHTML='';
     box.appendChild(buildPubLeg()); box.appendChild(buildPubLeg());
     $('#pubModal').style.display='flex';
@@ -1791,7 +1841,7 @@
       bk:r.querySelector('.pl-bk').value,
       odd:(r.querySelector('.pl-odd').value||'').trim()
     })).filter(l=>l.match||l.odd);
-    const roi=parseFloat($('#pubRoi').value)||null;
+    const roi=parseFloat($('#pubRoi').dataset.roi)||null;
     const ttl=parseInt($('#pubTtl').value)||10;
     const note=($('#pubNote').value||'').trim();
     const expires=new Date(Date.now()+ttl*60000).toISOString();
@@ -1826,7 +1876,7 @@
   $('#pubBackdrop').addEventListener('click',closePublish);
   $('#pubSend').addEventListener('click',sendPublish);
   $('#pubClean').addEventListener('click',cleanExpiredSignals);
-  $('#pubAddLeg').addEventListener('click',()=>$('#pubLegs').appendChild(buildPubLeg()));
+  $('#pubAddLeg').addEventListener('click',()=>{ $('#pubLegs').appendChild(buildPubLeg()); computePubRoi(); });
   $('#signalPopup').addEventListener('click',openSignals);
   $('#signalClose').addEventListener('click',closeSignals);
   $('#signalCloseBtn').addEventListener('click',closeSignals);
@@ -2153,8 +2203,24 @@
         panel.querySelector('.scores-frame').appendChild(ifr);
         panel.dataset.loaded='1';
       }
+      // recharge le widget de l'onglet actif (pour forcer la mise à jour des scores)
+      function refreshActivePanel(){
+        const active=panels.querySelector('.scores-panel.on');
+        if(!active || !active.dataset.loaded)return;
+        // ne rafraîchit pas si la section est masquée (œil fermé) ou l'onglet arrière-plan
+        if(card.classList.contains('hist-collapsed'))return;
+        if(document.hidden)return;
+        const ifr=active.querySelector('iframe');
+        if(ifr){
+          // recharge en réassignant la source (garde la position d'onglet)
+          const src=ifr.src;
+          ifr.src=src;
+        }
+      }
       // charge le premier
       loadPanel(panels.querySelector('.scores-panel.on'));
+      // rafraîchissement automatique toutes les 60 secondes (onglet actif seulement)
+      setInterval(refreshActivePanel, 60000);
 
       tabs.querySelectorAll('.scores-tab').forEach(tab=>{
         tab.addEventListener('click',()=>{
