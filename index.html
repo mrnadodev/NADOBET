@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -32,6 +32,7 @@
   "https://widgets.sofascore.com/en-US/embed/fixtures?eventIds=12813016,12812994,12813017,12813015&showCompetitionLogo=true&widgetTitle=FIFA+World+Cup%2C+Knockout&widgetTheme=dark"
 ]
 };
+
 </script>
 <style>
   :root{
@@ -305,6 +306,24 @@
   .admin-foot{padding:10px 14px;border-top:1px solid var(--line-soft);
     font-size:10px;color:var(--ink-faint);text-align:center;letter-spacing:.02em}
   @media(max-width:640px){.admin-drawer{width:calc(100vw - 44px)}}
+  .bankroll-card{margin-top:22px}
+  .bk-moves-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;
+    font-weight:600;color:var(--ink-dim);margin-bottom:10px;font-family:var(--mono)}
+  .bk-moves{display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto}
+  .bk-move{display:flex;align-items:center;gap:12px;padding:10px 13px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:9px}
+  .bk-move .bm-ico{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:14px}
+  .bk-move.dep .bm-ico{background:rgba(47,230,168,.14);color:var(--mint)}
+  .bk-move.wit .bm-ico{background:rgba(255,93,108,.14);color:var(--red)}
+  .bk-move .bm-meta{flex:1;min-width:0}
+  .bk-move .bm-type{font-size:13px;color:var(--ink);font-weight:600}
+  .bk-move .bm-date{font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  .bk-move .bm-amt{font-family:var(--mono);font-weight:700;font-size:14px;white-space:nowrap}
+  .bk-move.dep .bm-amt{color:var(--mint)}
+  .bk-move.wit .bm-amt{color:var(--red)}
+  .bk-move .bm-del{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:5px}
+  .bk-move .bm-del:hover{color:var(--red);background:rgba(255,93,108,.1)}
+  .bk-empty{text-align:center;color:var(--ink-faint);font-size:12px;font-family:var(--mono);padding:18px}
   .hist-card{margin-top:22px}
   .scores-card{margin-top:22px}
   .scores-stats-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
@@ -761,9 +780,36 @@
   </div>
 
   <!-- HISTORIQUE -->
-  <div class="card hist-card" id="histCard">
+  <!-- ===== KÈS / BANKROLL ===== -->
+  <div class="card bankroll-card" id="bankrollCard">
     <div class="card-head">
       <div class="title"><span class="num">3</span>
+        <div><h2>Caisse (bankroll)</h2><span class="sub">Suivi de votre capital de jeu</span></div></div>
+      <div class="hist-head-actions">
+        <button class="btn ghost" id="bkDepositBtn" style="padding:9px 14px;font-size:12.5px">＋ Dépôt</button>
+        <button class="btn ghost" id="bkWithdrawBtn" style="padding:9px 14px;font-size:12.5px">－ Retrait</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="perf-cards">
+        <div class="perf-box"><div class="pk">Solde actuel</div><div class="pv" id="bkBalance">—</div></div>
+        <div class="perf-box"><div class="pk">Capital déposé (net)</div><div class="pv" id="bkDeposited">—</div></div>
+        <div class="perf-box"><div class="pk">Profit des paris</div><div class="pv" id="bkBetProfit">—</div></div>
+        <div class="perf-box"><div class="pk">Croissance</div><div class="pv" id="bkGrowth">—</div></div>
+      </div>
+      <div id="bkMovesWrap" style="margin-top:16px">
+        <div class="bk-moves-head">
+          <span>Mouvements de caisse</span>
+          <span id="bkMovesCount" style="color:var(--ink-faint)">—</span>
+        </div>
+        <div id="bkMoves" class="bk-moves"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hist-card" id="histCard">
+    <div class="card-head">
+      <div class="title"><span class="num">4</span>
         <div><h2 style="display:flex;align-items:center;gap:10px">Historique des paris
           <button class="eye-btn on" id="histEye" title="Afficher / masquer" aria-label="Afficher ou masquer l'historique">
             <svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -831,7 +877,7 @@
   <!-- ===== SCORES EN DIRECT ===== -->
   <div class="card scores-card" id="scoresCard">
     <div class="card-head">
-      <div class="title"><span class="num">4</span>
+      <div class="title"><span class="num">5</span>
         <div><h2>Scores en direct</h2><span class="sub">Widget de résultats en temps réel</span></div></div>
       <button class="eye-btn on" id="scoresEye" title="Afficher / masquer" aria-label="Afficher ou masquer les scores">
         <svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1463,7 +1509,92 @@
     $('#pfWinrate').textContent=settled.length?winrate.toFixed(0)+'%':'—';
 
     drawProfitChart();
+    renderBankroll();
   }
+
+  /* ===== CAISSE / BANKROLL ===== */
+  let bankMoves=[]; // {id, type:'deposit'|'withdraw', amount, date}
+
+  async function loadBankroll(){
+    if(!sb||!currentUser){ bankMoves=[]; return; }
+    try{
+      const {data,error}=await sb.from('bankroll').select('*').order('date',{ascending:true});
+      if(error)throw error;
+      bankMoves=(data||[]).map(r=>({id:r.id,type:r.type,amount:Number(r.amount),date:r.date}));
+    }catch(err){ console.error('bankroll:',err); bankMoves=[]; }
+  }
+  async function dbAddMove(m){
+    if(!sb||!currentUser)return null;
+    try{
+      const {data,error}=await sb.from('bankroll')
+        .insert({user_id:currentUser.id, type:m.type, amount:m.amount, date:m.date})
+        .select().single();
+      if(error)throw error;
+      return data.id;
+    }catch(err){ console.error(err); showToast('Échec de l\u2019enregistrement du mouvement',true); return null; }
+  }
+  async function dbDeleteMove(id){
+    if(!sb||!currentUser)return;
+    try{ await sb.from('bankroll').delete().eq('id',id); }catch(err){ console.error(err); }
+  }
+
+  function renderBankroll(){
+    // profit réalisé des paris (gagné/perdu)
+    const settled=history.filter(h=>h.status==='won'||h.status==='lost');
+    const betProfit=settled.reduce((s,h)=>s+computeProfit(h),0);
+    const deposits=bankMoves.filter(m=>m.type==='deposit').reduce((s,m)=>s+m.amount,0);
+    const withdrawals=bankMoves.filter(m=>m.type==='withdraw').reduce((s,m)=>s+m.amount,0);
+    const netDeposited=deposits-withdrawals;
+    const balance=netDeposited+betProfit;
+    const growth = deposits>0 ? (betProfit/deposits*100) : 0;
+
+    $('#bkBalance').textContent=htg(balance);
+    $('#bkBalance').className='pv '+(balance>=0?'':'neg');
+    $('#bkDeposited').textContent=htg(netDeposited);
+    const bp=$('#bkBetProfit');
+    bp.textContent=(betProfit>=0?'+':'')+htg(betProfit);
+    bp.className='pv '+(betProfit>0?'pos':betProfit<0?'neg':'');
+    const gr=$('#bkGrowth');
+    gr.textContent=deposits>0?((growth>=0?'+':'')+growth.toFixed(2)+'%'):'—';
+    gr.className='pv '+(growth>0?'pos':growth<0?'neg':'');
+
+    // liste des mouvements (récents en haut)
+    const box=$('#bkMoves');
+    $('#bkMovesCount').textContent=bankMoves.length+' mouvement(s)';
+    if(!bankMoves.length){ box.innerHTML='<div class="bk-empty">Aucun mouvement. Ajoutez un dépôt pour démarrer votre suivi de caisse.</div>'; return; }
+    box.innerHTML=bankMoves.slice().reverse().map(m=>{
+      const dep=m.type==='deposit';
+      return `<div class="bk-move ${dep?'dep':'wit'}">
+        <div class="bm-ico">${dep?'＋':'－'}</div>
+        <div class="bm-meta"><div class="bm-type">${dep?'Dépôt':'Retrait'}</div><div class="bm-date">${m.date}</div></div>
+        <div class="bm-amt">${dep?'+':'-'}${htg(m.amount)}</div>
+        <button class="bm-del" data-del="${m.id}" title="Supprimer">✕</button>
+      </div>`;
+    }).join('');
+    $$('#bkMoves .bm-del').forEach(b=>b.addEventListener('click',async()=>{
+      const id=b.dataset.del;
+      bankMoves=bankMoves.filter(x=>x.id!==id);
+      renderBankroll(); dbDeleteMove(id);
+    }));
+  }
+
+  async function addMove(type){
+    const label=type==='deposit'?'déposer':'retirer';
+    const raw=prompt('Montant à '+label+' (HTG) :');
+    if(raw===null)return;
+    const amount=parseFloat((raw||'').replace(',','.'));
+    if(!(amount>0)){ showToast('Montant invalide',true); return; }
+    const date=new Date().toISOString().slice(0,10);
+    const tempId='tmp_'+Date.now();
+    const move={id:tempId,type,amount,date};
+    bankMoves.push(move); renderBankroll();
+    const realId=await dbAddMove(move);
+    if(realId){ const m=bankMoves.find(x=>x.id===tempId); if(m)m.id=realId; renderBankroll();
+      showToast(type==='deposit'?'Dépôt enregistré ✓':'Retrait enregistré ✓'); }
+    else { bankMoves=bankMoves.filter(x=>x.id!==tempId); renderBankroll(); }
+  }
+  $('#bkDepositBtn').addEventListener('click',()=>addMove('deposit'));
+  $('#bkWithdrawBtn').addEventListener('click',()=>addMove('withdraw'));
 
   let chartUnit='htg';
   function drawProfitChart(){
@@ -1731,6 +1862,7 @@
     $('#adminHistBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
     $('#publishBtn').style.display = isAdmin(user) ? 'inline-flex' : 'none';
     await loadHistory();
+    await loadBankroll();
     renderHistory();
     startPresence(user);
     startSignals(user);
