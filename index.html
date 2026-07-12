@@ -419,6 +419,12 @@
     transition:transform .25s;box-shadow:0 4px 16px rgba(0,0,0,.3)}
   .offline-banner.show{transform:translateY(0)}
   .hist-filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center}
+  .quick-dates{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+  .note-dot{cursor:help;font-size:11px;opacity:.75;margin-left:4px}
+  .qd-chip{font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;background:var(--panel-2);
+    border:1px solid var(--line);color:var(--ink-dim);padding:6px 13px;border-radius:8px;transition:.15s}
+  .qd-chip:hover{color:var(--ink);border-color:var(--mint-dim)}
+  .qd-chip.on{background:var(--mint);color:var(--bg);border-color:var(--mint)}
   .hist-filters .hf-field{flex:1 1 200px;min-width:160px}
   .hist-filters input[type=text],.hist-filters select,.hist-filters input[type=date]{
     font-size:13px;padding:9px 11px}
@@ -877,6 +883,12 @@
         </div>
       </div>
 
+      <div class="quick-dates" id="quickDates">
+        <button class="qd-chip" data-range="today">Aujourd'hui</button>
+        <button class="qd-chip" data-range="week">7 jours</button>
+        <button class="qd-chip" data-range="month">Ce mois</button>
+        <button class="qd-chip" data-range="all">Tout</button>
+      </div>
       <div class="hist-filters" id="histFilters">
         <div class="hf-field">
           <input type="text" id="filterSearch" placeholder="🔍 Rechercher (match, bookmaker…)">
@@ -1001,6 +1013,8 @@
           <option value="won">Gagné</option>
           <option value="lost">Perdu</option>
         </select></label>
+      <label class="fld" style="margin-bottom:0"><span class="lab">Note (optionnel)</span>
+        <input type="text" id="editNote" placeholder="ex : cotes vérifiées, raison du pari…"></label>
     </div>
     <div class="edit-foot">
       <button class="btn ghost" id="editCancel">Annuler</button>
@@ -1461,7 +1475,7 @@
       const st=h.status||'pending';
       const tr=document.createElement('tr');
       tr.innerHTML=`<td>${h.date}</td>
-        <td>${[h.match1,h.match2].filter(Boolean).join(' · ')||'<span style="color:var(--ink-faint)">—</span>'}</td>
+        <td>${[h.match1,h.match2].filter(Boolean).join(' · ')||'<span style="color:var(--ink-faint)">—</span>'}${h.note?` <span class="note-dot" title="${h.note.replace(/"/g,'&quot;')}">📝</span>`:''}</td>
         <td>${h.legs}</td><td><span class="tag">${h.mode}</span></td>
         <td>${h.odds.map(o=>o.toFixed(2)).join(' / ')}</td>
         <td>${h.bks.join(' · ')}</td>
@@ -1500,6 +1514,7 @@
     $('#editMatch2').value=h.match2||'';
     $('#editDate').value=h.date||'';
     $('#editStatus').value=h.status||'pending';
+    $('#editNote').value=h.note||'';
     // champs bookmaker par issue
     const bkHtml=(h.bks||[]).map((b,i)=>`<div class="edit-bk-row">
       <span class="lg">Issue ${i+1} · cote ${(h.odds[i]!=null?h.odds[i].toFixed(2):'—')}</span>
@@ -1515,6 +1530,7 @@
     h.match2=($('#editMatch2').value||'').trim();
     h.date=$('#editDate').value||h.date;
     h.status=$('#editStatus').value;
+    h.note=($('#editNote').value||'').trim();
     h.bks=$$('.editBk').map(s=>s.value);
     renderHistory();
     dbUpdateRecord(h);
@@ -1532,8 +1548,24 @@
   });
   $('#filterClear').addEventListener('click',()=>{
     $('#filterSearch').value='';$('#filterBk').value='';$('#filterStatus').value='';
-    $('#filterFrom').value='';$('#filterTo').value='';renderHistory();
+    $('#filterFrom').value='';$('#filterTo').value='';
+    $$('#quickDates .qd-chip').forEach(c=>c.classList.remove('on'));
+    renderHistory();
   });
+  // Filtres de date rapides
+  $$('#quickDates .qd-chip').forEach(chip=>chip.addEventListener('click',()=>{
+    $$('#quickDates .qd-chip').forEach(c=>c.classList.toggle('on',c===chip));
+    const r=chip.dataset.range;
+    const today=new Date();
+    const iso=d=>d.toISOString().slice(0,10);
+    let from='',to='';
+    if(r==='today'){ from=to=iso(today); }
+    else if(r==='week'){ const d=new Date(today); d.setDate(d.getDate()-6); from=iso(d); to=iso(today); }
+    else if(r==='month'){ from=iso(new Date(today.getFullYear(),today.getMonth(),1)); to=iso(today); }
+    else { from=''; to=''; } // tout
+    $('#filterFrom').value=from; $('#filterTo').value=to;
+    renderHistory();
+  }));
 
   /* ---- BILAN DE PERFORMANCE + GRAPHIQUE ---- */
   function computeProfit(h){
@@ -1841,6 +1873,7 @@
       r['Profit']=Number(h.profit.toFixed(2));
       r['ROI %']=Number(h.roi.toFixed(2));
       r['Statut']=STATUS[h.status||'pending'];
+      r['Note']=h.note||'';
       return r;
     });
     const ws=XLSX.utils.json_to_sheet(rows);
