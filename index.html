@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+ window.NADOBET_CONFIG = {
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
     // Email de l'administrateur : le panneau "Qui est en ligne" ne s'affiche QUE pour ce compte.
@@ -293,7 +293,7 @@
   .hist-card{margin-top:22px}
   .scores-card{margin-top:22px}
   .scores-stats-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
-    margin-top:14px;padding:13px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px}
+    margin-bottom:14px;padding:13px 16px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px}
   .scores-stats-bar .ssb-txt{font-size:12.5px;color:var(--ink-dim);flex:1;min-width:200px}
   .scores-stats-bar .ssb-btn{text-decoration:none;font-size:13px;padding:10px 16px;white-space:nowrap}
   @media(max-width:640px){.scores-stats-bar .ssb-btn{width:100%;justify-content:center;text-align:center}}
@@ -799,11 +799,11 @@
       </button>
     </div>
     <div class="card-body">
-      <div id="scoresMount" class="scores-mount"></div>
       <div id="scoresStatsBar" class="scores-stats-bar" style="display:none">
         <span class="ssb-txt">Pour les statistiques détaillées d'un match (tirs, corners, possession…) :</span>
         <a id="scoresStatsLink" href="https://www.sofascore.com/" target="_blank" rel="noopener" class="btn primary ssb-btn">📊 Voir les stats sur SofaScore ↗</a>
       </div>
+      <div id="scoresMount" class="scores-mount"></div>
       <div id="scoresPlaceholder" class="scores-placeholder">
         <div class="sp-ico">📡</div>
         <div class="sp-title">Aucun widget configuré</div>
@@ -1708,14 +1708,52 @@
       try{ legs=Array.isArray(s.legs)?s.legs:JSON.parse(s.legs||'[]'); }catch(e){ legs=[]; }
       const legsHtml=legs.map(l=>`<div class="sig-leg"><span>${(l.match||l.pick||'—')} <span class="sl-bk">· ${l.bk||''}</span></span><span class="sl-odd">${l.odd||''}</span></div>`).join('');
       const mins=Math.max(0,Math.round((new Date(s.expires_at).getTime()-Date.now())/60000));
+      const canUse=legs.filter(l=>parseFloat(l.odd)>1).length>=2;
       return `<div class="sig-card">
         <div class="sig-top"><span class="sig-title">${s.title||'Surebet'}</span>
           ${s.roi?`<span class="sig-roi">+${Number(s.roi).toFixed(2)}%</span>`:''}</div>
         <div class="sig-legs">${legsHtml||'<span style="color:var(--ink-faint);font-size:12px">Détails dans la note.</span>'}</div>
         ${s.note?`<div class="sig-note">📝 ${s.note}</div>`:''}
         <div class="sig-meta">Publié · expire dans ~${mins} min</div>
+        ${canUse?`<button class="btn primary sig-use" data-use="${s.id}" style="width:100%;justify-content:center;margin-top:12px;font-size:13px">↧ Utiliser dans le calculateur</button>`:''}
       </div>`;
     }).join('');
+    $$('.sig-use').forEach(b=>b.addEventListener('click',()=>useSignalInCalc(b.dataset.use)));
+  }
+
+  // Remplit le calculateur avec les données d'un surebet publié
+  function useSignalInCalc(id){
+    const s=activeSignals.find(x=>x.id===id); if(!s)return;
+    let slegs=[];
+    try{ slegs=Array.isArray(s.legs)?s.legs:JSON.parse(s.legs||'[]'); }catch(e){ slegs=[]; }
+    slegs=slegs.filter(l=>parseFloat(l.odd)>1);
+    if(slegs.length<2){ showToast('Ce surebet n\u2019a pas assez de cotes valides',true); return; }
+
+    // 2 ou 3 issues selon le surebet
+    legs = slegs.length>=3 ? 3 : 2;
+    $$('#segLegs button').forEach(x=>x.classList.toggle('on',x.dataset.legs==String(legs)));
+    // mode profit égal par défaut
+    mode='equal';
+    $$('#segMode button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='equal'));
+    buildIssueBlocks();
+
+    // remplit cotes + bookmakers
+    const oddInputs=$$('.calcOdd'), bkSelects=$$('.calcBk');
+    slegs.slice(0,legs).forEach((l,i)=>{
+      if(oddInputs[i]) oddInputs[i].value=parseFloat(l.odd).toFixed(2);
+      if(bkSelects[i] && l.bk){
+        const sel=bkSelects[i];
+        if(![...sel.options].some(o=>o.value===l.bk)){ const o=document.createElement('option');o.value=l.bk;o.textContent=l.bk;sel.appendChild(o); }
+        sel.value=l.bk;
+      }
+    });
+    // titre → champ match 1
+    if(s.title){ $('#match1').value=s.title; }
+    renderCalc();
+    closeSignals();
+    // remonte vers le calculateur
+    document.querySelector('#amount').scrollIntoView({behavior:'smooth',block:'center'});
+    showToast('Surebet chargé dans le calculateur ✓');
   }
   function openSignals(){
     activeSignals.forEach(s=>signalsSeen[s.id]=true);
