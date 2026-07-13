@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-   window.NADOBET_CONFIG = {
+window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -31,7 +31,6 @@
     TELEGRAM_BOT_TOKEN: "8995154321:AAE9LxkU9T9t0SuVzermRoGyt2bg3eidNtY",   // ex : "123456:ABC-DEF..."
     TELEGRAM_CHAT_ID:   "@nadobet_surebets"    // ex : "@nadobet_surebets" ou "-1001234567890"
   };
-
 </script>
 <style>
   :root{
@@ -322,6 +321,8 @@
   .u-btn.pub{color:var(--gold);border-color:rgba(245,197,66,.3)}
   .u-btn.pub:hover{background:rgba(245,197,66,.12)}
   .u-btn.pub.on{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+  .u-btn.pub-off{color:var(--ink-dim);border-color:var(--line)}
+  .u-btn.pub-off:hover{color:var(--red);border-color:rgba(255,93,108,.3);background:rgba(255,93,108,.08)}
   .u-badge.pub-badge{background:rgba(245,197,66,.14);color:var(--gold);margin-left:5px}
   .users-empty{text-align:center;color:var(--ink-faint);font-size:11.5px;font-family:var(--mono);padding:20px}
   .live-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:pulse 1.6s infinite}
@@ -381,6 +382,23 @@
   .chat-msg .cm-del:hover{color:var(--red);background:rgba(255,93,108,.1)}
   .chat-compose{display:flex;gap:10px}
   .chat-compose input{flex:1}
+  .chat-msg .cm-actions{display:flex;flex-direction:column;gap:3px;align-self:center;opacity:0;transition:.15s}
+  .chat-msg:hover .cm-actions{opacity:1}
+  .cm-act{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px}
+  .cm-act:hover{color:var(--mint);background:rgba(47,230,168,.1)}
+  .cm-act[data-del]:hover{color:var(--red);background:rgba(255,93,108,.1)}
+  .cm-reply{border-left:2px solid var(--mint-dim);padding:2px 8px;margin-bottom:4px;font-size:11px;border-radius:3px;background:rgba(47,230,168,.05)}
+  .cm-reply .cr-name{color:var(--mint);font-weight:700;margin-right:6px}
+  .cm-reply .cr-text{color:var(--ink-faint)}
+  .cm-text.deleted{font-style:italic;color:var(--ink-faint);font-size:12.5px}
+  .cm-text.deleted .cm-orig{color:var(--ink-dim);font-style:normal}
+  .chat-msg.is-deleted{opacity:.7}
+  .chat-reply-bar{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--mint-dim);
+    border-radius:9px;padding:8px 12px;margin-bottom:10px}
+  .chat-reply-bar .crb-content{flex:1;font-size:12px;color:var(--ink-dim);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chat-reply-bar .crb-content b{color:var(--mint)}
+  .chat-reply-bar .crb-x{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:13px;padding:3px 6px;border-radius:5px}
+  .chat-reply-bar .crb-x:hover{color:var(--red)}
   .chat-foot{font-size:11px;color:var(--ink-faint);margin-top:10px;line-height:1.5}
   .chat-blocked{text-align:center;color:var(--gold);font-size:12px;font-family:var(--mono);padding:10px;
     background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);border-radius:9px}
@@ -998,9 +1016,16 @@
             <svg class="eye-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           </button>
         </h2><span class="sub">Discutez avec les autres parieurs · en direct</span></div></div>
+      <span id="adminChatBtns" style="display:none">
+        <button class="btn ghost" id="chatClear" style="padding:8px 14px;font-size:12px">🧹 Vider le chat</button>
+      </span>
     </div>
     <div class="card-body">
       <div id="chatMessages" class="chat-messages"><div class="chat-loading">Chargement…</div></div>
+      <div id="chatReplyBar" class="chat-reply-bar" style="display:none">
+        <div class="crb-content">↩ Réponse à <b id="chatReplyName">—</b> · <span id="chatReplyText" class="crb-text">—</span></div>
+        <button class="crb-x" id="chatReplyCancel" title="Annuler">✕</button>
+      </div>
       <div class="chat-compose">
         <input type="text" id="chatInput" placeholder="Écrivez un message…" maxlength="500" autocomplete="off">
         <button class="btn primary" id="chatSend" style="padding:10px 18px">Envoyer</button>
@@ -2132,6 +2157,7 @@
     $('#userChip').title=user.email;
     $('#logoutBtn').style.display='';
     $('#adminHistBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
+    $('#adminChatBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
     $('#publishBtn').style.display = canPublish() ? 'inline-flex' : 'none';
     await loadHistory();
     await loadBankroll();
@@ -2185,8 +2211,10 @@
   }
 
   /* ===== CHAT COMMUNAUTAIRE ===== */
-  let chatChannel=null, chatMsgs=[];
+  let chatChannel=null, chatMsgs=[], replyTo=null, lastSentTimes=[];
   const CHAT_LIMIT=100; // nombre de messages chargés
+  const SPAM_WINDOW=10000; // 10 s
+  const SPAM_MAX=5;        // max 5 messages / 10 s
 
   function chatName(email){ return (email||'?').split('@')[0]; }
   function chatInitial(email){ return ((email||'?')[0]||'?').toUpperCase(); }
@@ -2200,6 +2228,10 @@
         const m=payload.new;
         if(!chatMsgs.some(x=>x.id===m.id)){ chatMsgs.push(m); renderChat(true); }
       })
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'messages'},payload=>{
+        const m=payload.new; const i=chatMsgs.findIndex(x=>x.id===m.id);
+        if(i>=0){ chatMsgs[i]=m; renderChat(false); }
+      })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'messages'},payload=>{
         chatMsgs=chatMsgs.filter(x=>x.id!==payload.old.id); renderChat(false);
       })
@@ -2207,7 +2239,7 @@
   }
   async function stopChat(){
     if(chatChannel){ try{await sb.removeChannel(chatChannel);}catch(e){} chatChannel=null; }
-    chatMsgs=[];
+    chatMsgs=[]; replyTo=null;
   }
   async function loadChatMessages(){
     if(!sb)return;
@@ -2219,27 +2251,60 @@
     }catch(err){ console.error('chat:',err);
       $('#chatMessages').innerHTML='<div class="chat-empty">Chat indisponible.<br>Vérifiez que la table « messages » existe (voir le guide).</div>'; }
   }
+  function msgById(id){ return chatMsgs.find(x=>x.id===id); }
   function renderChat(scroll){
     const box=$('#chatMessages'); if(!box)return;
-    if(!chatMsgs.length){ box.innerHTML='<div class="chat-empty">Aucun message. Soyez le premier à écrire !</div>'; return; }
     const admin=isAdmin(currentUser);
+    // Un message "supprimé" (deleted=true) reste visible pour l'admin seulement
+    const visible=chatMsgs.filter(m=>!m.deleted || admin);
+    if(!visible.length){ box.innerHTML='<div class="chat-empty">Aucun message. Soyez le premier à écrire !</div>'; return; }
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
-    box.innerHTML=chatMsgs.map(m=>{
+    box.innerHTML=visible.map(m=>{
       const mine=currentUser&&m.user_id===currentUser.id;
       const t=new Date(m.created_at);
       const time=t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-      const delBtn=(admin||mine)?`<button class="cm-del" data-del="${m.id}" title="Supprimer">✕</button>`:'';
-      return `<div class="chat-msg ${mine?'mine':''}">
+      const del=m.deleted;
+      // aperçu du message cité (reply)
+      let replyHtml='';
+      if(m.reply_to){
+        const src=msgById(m.reply_to);
+        if(src){ replyHtml=`<div class="cm-reply"><span class="cr-name">${escapeHTML(chatName(src.email))}</span><span class="cr-text">${escapeHTML((src.text||'').slice(0,80))}</span></div>`; }
+      }
+      const canDelete = !del && (admin||mine);
+      const delBtn=canDelete?`<button class="cm-act" data-del="${m.id}" title="Supprimer">✕</button>`:'';
+      const replyBtn=(!del)?`<button class="cm-act" data-reply="${m.id}" title="Répondre">↩</button>`:'';
+      const textHtml = del
+        ? `<div class="cm-text deleted">🚫 Message supprimé${admin?' (visible admin)':''}${admin&&m.text?': <span class="cm-orig">'+escapeHTML(m.text)+'</span>':''}</div>`
+        : `<div class="cm-text">${escapeHTML(m.text)}</div>`;
+      return `<div class="chat-msg ${mine?'mine':''} ${del?'is-deleted':''}">
         <div class="cm-av">${chatInitial(m.email)}</div>
         <div class="cm-body">
           <div class="cm-top"><span class="cm-name">${mine?'Vous':escapeHTML(chatName(m.email))}</span><span class="cm-time">${time}</span></div>
-          <div class="cm-text">${escapeHTML(m.text)}</div>
+          ${replyHtml}
+          ${textHtml}
         </div>
-        ${delBtn}
+        <div class="cm-actions">${replyBtn}${delBtn}</div>
       </div>`;
     }).join('');
-    $$('#chatMessages .cm-del').forEach(b=>b.addEventListener('click',()=>deleteChatMsg(b.dataset.del)));
+    $$('#chatMessages [data-del]').forEach(b=>b.addEventListener('click',()=>deleteChatMsg(b.dataset.del)));
+    $$('#chatMessages [data-reply]').forEach(b=>b.addEventListener('click',()=>startReply(b.dataset.reply)));
     if(scroll||nearBottom) box.scrollTop=box.scrollHeight;
+  }
+  function startReply(id){
+    const m=msgById(id); if(!m)return;
+    replyTo=id;
+    $('#chatReplyBar').style.display='flex';
+    $('#chatReplyName').textContent=chatName(m.email);
+    $('#chatReplyText').textContent=(m.text||'').slice(0,80);
+    $('#chatInput').focus();
+  }
+  function cancelReply(){ replyTo=null; $('#chatReplyBar').style.display='none'; }
+  function spamCheck(){
+    const now=Date.now();
+    lastSentTimes=lastSentTimes.filter(t=>now-t<SPAM_WINDOW);
+    if(lastSentTimes.length>=SPAM_MAX) return false;
+    lastSentTimes.push(now);
+    return true;
   }
   async function sendChatMsg(){
     if(!sb||!currentUser)return;
@@ -2247,20 +2312,48 @@
     const text=(input.value||'').trim();
     if(!text)return;
     if(text.length>500){ showToast('Message trop long',true); return; }
-    input.value='';
+    if(!spamCheck()){ showToast('Doucement — trop de messages d\u2019affilée',true); return; }
+    const payload={user_id:currentUser.id, email:currentUser.email, text};
+    if(replyTo) payload.reply_to=replyTo;
+    input.value=''; cancelReply();
     try{
-      const {error}=await sb.from('messages').insert({user_id:currentUser.id, email:currentUser.email, text});
+      const {error}=await sb.from('messages').insert(payload);
       if(error)throw error;
     }catch(err){ console.error(err); showToast('Échec de l\u2019envoi du message',true); input.value=text; }
   }
   async function deleteChatMsg(id){
     if(!sb)return;
-    chatMsgs=chatMsgs.filter(x=>x.id!==id); renderChat(false);
-    try{ await sb.from('messages').delete().eq('id',id); }catch(err){ console.error(err); }
+    const m=msgById(id); if(!m)return;
+    const admin=isAdmin(currentUser);
+    if(admin){
+      // admin : suppression définitive
+      chatMsgs=chatMsgs.filter(x=>x.id!==id); renderChat(false);
+      try{ await sb.from('messages').delete().eq('id',id); }catch(err){ console.error(err); }
+    }else{
+      // utilisateur : soft delete (reste visible pour l'admin)
+      m.deleted=true; renderChat(false);
+      try{ await sb.from('messages').update({deleted:true}).eq('id',id); }catch(err){ console.error(err); }
+    }
+  }
+  // Nettoyer tout le chat (admin)
+  async function clearChat(){
+    if(!sb||!isAdmin(currentUser))return;
+    if(!confirm('Supprimer TOUS les messages du chat ? Cette action est irréversible.'))return;
+    const btn=$('#chatClear'); const old=btn.textContent; btn.disabled=true; btn.textContent='…';
+    try{
+      // supprime tout (id non nul)
+      const {error}=await sb.from('messages').delete().neq('id','00000000-0000-0000-0000-000000000000');
+      if(error)throw error;
+      chatMsgs=[]; renderChat(false);
+      showToast('Chat vidé ✓');
+    }catch(err){ console.error(err); showToast('Nettoyage impossible',true); }
+    finally{ btn.disabled=false; btn.textContent=old; }
   }
   // Événements chat
   $('#chatSend').addEventListener('click',sendChatMsg);
   $('#chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChatMsg(); } });
+  $('#chatReplyCancel') && $('#chatReplyCancel').addEventListener('click',cancelReply);
+  $('#chatClear') && $('#chatClear').addEventListener('click',clearChat);
   $('#chatEye').addEventListener('click',()=>{
     const eye=$('#chatEye'), card=$('#chatCard');
     const on=!eye.classList.contains('on');
@@ -2681,8 +2774,8 @@
         // toggle publisher (seulement pour comptes approuvés)
         if(st==='approved'){
           actions += isPub
-            ? '<button class="u-btn pub on" data-unpub="'+u.id+'">★ Publisher</button>'
-            : '<button class="u-btn pub" data-pub="'+u.id+'">☆ Publisher</button>';
+            ? '<button class="u-btn pub-off" data-unpub="'+u.id+'">✕ Retirer publisher</button>'
+            : '<button class="u-btn pub" data-pub="'+u.id+'">☆ Rendre publisher</button>';
         }
       }
       return `<div class="user-row">
