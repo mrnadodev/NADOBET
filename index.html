@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -31,7 +31,6 @@
     TELEGRAM_BOT_TOKEN: "8995154321:AAE9LxkU9T9t0SuVzermRoGyt2bg3eidNtY",   // ex : "123456:ABC-DEF..."
     TELEGRAM_CHAT_ID:   "@nadobet_surebets"    // ex : "@nadobet_surebets" ou "-1001234567890"
   };
-
 
 </script>
 <style>
@@ -404,7 +403,7 @@
   .chat-msg .cm-text{font-size:13.5px;color:var(--ink);line-height:1.4;word-wrap:break-word;overflow-wrap:anywhere}
   .chat-msg .cm-del{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px;align-self:center}
   .chat-msg .cm-del:hover{color:var(--red);background:rgba(255,93,108,.1)}
-  .chat-fab{position:fixed;right:18px;bottom:18px;z-index:90;width:56px;height:56px;border-radius:50%;
+  .chat-fab{position:fixed;right:18px;bottom:80px;z-index:90;width:56px;height:56px;border-radius:50%;
     background:var(--mint);color:var(--bg);border:none;cursor:pointer;display:grid;place-items:center;
     box-shadow:0 10px 30px -6px rgba(47,230,168,.5);transition:transform .18s,box-shadow .18s}
   .chat-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 14px 36px -6px rgba(47,230,168,.6)}
@@ -414,7 +413,7 @@
     display:grid;place-items:center;border:2px solid var(--bg);animation:pop .3s ease}
   @keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
   /* sur grand écran, la bulle reste discrète (le chat est visible en défilant) */
-  @media(min-width:981px){ .chat-fab{width:50px;height:50px;right:22px;bottom:22px} }
+  @media(min-width:981px){ .chat-fab{width:50px;height:50px;right:22px;bottom:90px} }
   .chat-compose{display:flex;gap:10px}
   .chat-compose input{flex:1}
   #chatTimerToggle.timer-off{color:var(--gold);border-color:rgba(245,197,66,.4)}
