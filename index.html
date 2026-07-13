@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-window.NADOBET_CONFIG = {
+  window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -330,6 +330,7 @@ window.NADOBET_CONFIG = {
     font-family:var(--mono);font-weight:700;font-size:13px;background:var(--line);color:var(--ink-dim)}
   .user-row .u-meta{min-width:0;flex:1}
   .user-row .u-mail{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .user-row .u-sub{font-size:10.5px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
   .user-row .u-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
   .user-row .u-badge{font-size:9.5px;font-family:var(--mono);padding:2px 7px;border-radius:5px;display:inline-block}
   .u-badge.approved{background:rgba(47,230,168,.14);color:var(--mint)}
@@ -766,6 +767,13 @@ window.NADOBET_CONFIG = {
     <div id="authError" class="auth-error" style="display:none"></div>
     <div id="configWarn" class="auth-warn" style="display:none">
       Configuration Supabase manquante. Ouvrez le fichier et remplissez <b>SUPABASE_URL</b> et <b>SUPABASE_ANON_KEY</b> en haut (voir le guide).
+    </div>
+
+    <div class="auth-field" id="usernameField" style="display:none">
+      <span class="auth-ico">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <input type="text" id="authUsername" placeholder="Nom d'utilisateur (définitif)" autocomplete="off" maxlength="20">
     </div>
 
     <div class="auth-field">
@@ -2197,13 +2205,33 @@ window.NADOBET_CONFIG = {
   // Vérifie le statut du compte (approuvé / en attente / bloqué)
   let currentRole='user'; // 'user' | 'publisher' (admin géré séparément)
   let tourSeen=false;
+  let currentUsername='';
   let accountCreatedAt=null; // pour limiter les tout nouveaux comptes dans le chat
   const NEW_USER_CHAT_DELAY=10*60*1000; // 10 minutes avant de pouvoir écrire
+
+  // Alias affiché selon le rôle (confidentialité). Admin voit les vrais noms.
+  function roleAlias(role){
+    if(role==='admin')return 'NADOBET';
+    if(role==='publisher')return 'Publisher';
+    if(role==='moderator')return 'Moderator';
+    return null;
+  }
+  // Nom affiché d'un message pour l'utilisateur courant (respecte la confidentialité)
+  function displayNameFor(msgEmail, msgUsername, msgRole){
+    const alias=roleAlias(msgRole);
+    const base = msgUsername || (msgEmail? msgEmail.split('@')[0] : '?');
+    if(isAdmin(currentUser)){
+      // Admin voit tout : alias + vrai identifiant
+      return alias ? (alias+' · '+base) : base;
+    }
+    // Les autres voient l'alias si rôle spécial, sinon le username
+    return alias || base;
+  }
   async function fetchAccountStatus(user){
     // L'admin est toujours autorisé, sans dépendre de la table
     if(isAdmin(user)){ currentRole='admin'; }
     try{
-      const {data,error}=await sb.from('profiles').select('status,role,tour_seen').eq('id',user.id).single();
+      const {data,error}=await sb.from('profiles').select('status,role,tour_seen,username').eq('id',user.id).single();
       if(error){
         // Profil pas encore créé : on tente de le créer en "pending"
         if(error.code==='PGRST116'||/no rows/i.test(error.message||'')){
@@ -2214,6 +2242,7 @@ window.NADOBET_CONFIG = {
       }
       currentRole = isAdmin(user)?'admin':((data&&data.role)||'user');
       tourSeen = !!(data && data.tour_seen);
+      currentUsername = (data&&data.username)||'';
       return isAdmin(user) ? 'approved' : ((data&&data.status)||'pending');
     }catch(e){ console.error(e); return isAdmin(user)?'approved':'pending'; }
   }
@@ -2265,8 +2294,8 @@ window.NADOBET_CONFIG = {
     restoreAuthForm();
     $('#authGate').classList.add('hidden');
     $('#userChip').style.display='';$('#userEmail').textContent=user.email;
-    $('#userInitial').textContent=((user.email||'?')[0]||'?').toUpperCase();
-    $('#userChip').title=user.email;
+    $('#userInitial').textContent=((currentUsername||user.email||'?')[0]||'?').toUpperCase();
+    $('#userChip').title=(currentUsername?currentUsername+' · ':'')+user.email;
     $('#logoutBtn').style.display='';
     $('#adminHistBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
     $('#adminChatBtns').style.display = isAdmin(user) ? 'inline-flex' : 'none';
@@ -2278,6 +2307,7 @@ window.NADOBET_CONFIG = {
     startSignals(user);
     startChat(user);
     chatUnread=0; updateChatFab();
+    setTimeout(updateComposeState,300);
     if(!tourSeen) setTimeout(()=>startTour(),600);
   }
 
@@ -2483,7 +2513,7 @@ window.NADOBET_CONFIG = {
       let replyHtml='';
       if(m.reply_to){
         const src=msgById(m.reply_to);
-        if(src){ replyHtml=`<div class="cm-reply"><span class="cr-name">${escapeHTML(chatName(src.email))}</span><span class="cr-text">${escapeHTML((src.text||'').slice(0,80))}</span></div>`; }
+        if(src){ replyHtml=`<div class="cm-reply"><span class="cr-name">${escapeHTML(displayNameFor(src.email,src.username,src.sender_role))}</span><span class="cr-text">${escapeHTML((src.text||'').slice(0,80))}</span></div>`; }
       }
       const canDelete = !del && (mod||mine);
       const delBtn=canDelete?`<button class="cm-act" data-del="${m.id}" title="Supprimer">✕</button>`:'';
@@ -2511,7 +2541,7 @@ window.NADOBET_CONFIG = {
       return `<div class="chat-msg ${mine?'mine':''} ${del?'is-deleted':''}">
         <div class="cm-av">${chatInitial(m.email)}</div>
         <div class="cm-body">
-          <div class="cm-top"><span class="cm-name">${mine?'Vous':escapeHTML(chatName(m.email))}</span><span class="cm-time">${time}</span></div>
+          <div class="cm-top"><span class="cm-name">${mine?'Vous':escapeHTML(displayNameFor(m.email,m.username,m.sender_role))}</span><span class="cm-time">${time}</span></div>
           ${replyHtml}
           ${textHtml}
         </div>
@@ -2579,6 +2609,10 @@ window.NADOBET_CONFIG = {
 
   async function sendChatMsg(){
     if(!sb||!currentUser)return;
+    // Le salon "Surebets" est réservé en écriture à l'admin et aux publishers
+    if(currentRoom==='surebets' && !canPublish()){
+      showToast('Seuls l\u2019admin et les publishers peuvent écrire dans Surebets',true); return;
+    }
     const input=$('#chatInput');
     let text=(input.value||'').trim();
     if(!text)return;
@@ -2617,7 +2651,7 @@ window.NADOBET_CONFIG = {
         return;
       }
     }
-    const payload={user_id:currentUser.id, email:currentUser.email, text, room:currentRoom};
+    const payload={user_id:currentUser.id, email:currentUser.email, username:currentUsername, sender_role:currentRole, text, room:currentRoom};
     if(replyTo) payload.reply_to=replyTo;
     input.value=''; cancelReply();
     try{
@@ -2710,12 +2744,21 @@ window.NADOBET_CONFIG = {
   $('#chatTimerToggle') && $('#chatTimerToggle').addEventListener('click',toggleCooldown);
   // Bulle de chat flottante
   $('#chatFab') && $('#chatFab').addEventListener('click',goToChat);
+  // Active/désactive la zone d'écriture selon le salon et les droits
+  function updateComposeState(){
+    const input=$('#chatInput'), btn=$('#chatSend');
+    if(!input)return;
+    const locked = (currentRoom==='surebets' && !canPublish());
+    input.disabled=locked; btn.disabled=locked;
+    input.placeholder = locked ? '🔒 Salon réservé aux surebets officiels (lecture seule)' : 'Écrivez un message…';
+  }
   // Changement de salon
   $$('#chatRooms .chat-room-tab').forEach(tab=>tab.addEventListener('click',()=>{
     $$('#chatRooms .chat-room-tab').forEach(t=>t.classList.toggle('on',t===tab));
     tab.classList.remove('has-new');
     currentRoom=tab.dataset.room;
     renderChat(true);
+    updateComposeState();
   }));
   // Règles du chat : replier/déplier
   $('#chatRulesToggle') && $('#chatRulesToggle').addEventListener('click',()=>{
@@ -3025,9 +3068,22 @@ window.NADOBET_CONFIG = {
     if(!sb)return authError('Configuration Supabase manquante.');
     clearAuthError();
     const email=$('#authEmail').value.trim(), pass=$('#authPass').value;
+    const username=($('#authUsername').value||'').trim();
+    if(!username)return authError('Choisissez un nom d\u2019utilisateur.');
+    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username))
+      return authError('Nom d\u2019utilisateur : 3 à 20 caractères, lettres/chiffres/_ uniquement.');
     if(!email||!pass)return authError('Entrez un email et un mot de passe (min. 6 caractères).');
+    // Vérifie que le username n'est pas déjà pris
+    try{
+      const {data:taken}=await sb.from('profiles').select('id').ilike('username',username).limit(1);
+      if(taken && taken.length) return authError('Ce nom d\u2019utilisateur est déjà pris.');
+    }catch(e){/* si la colonne n'existe pas encore, on continue */}
     const {data,error}=await sb.auth.signUp({email,password:pass});
     if(error)return authError('Inscription échouée : '+error.message);
+    // Enregistre le username dans le profil
+    if(data.user){
+      try{ await sb.from('profiles').upsert({id:data.user.id, email, username, status:'pending'}); }catch(e){ console.error(e); }
+    }
     if(data.session){enterApp(data.user);}
     else{setAuthMode('login');authError('Compte créé. Vérifiez votre email pour confirmer, puis connectez-vous.');}
   }
@@ -3094,6 +3150,7 @@ window.NADOBET_CONFIG = {
     $('#submitLabel').textContent = m==='login' ? 'Se connecter' : 'Créer mon compte';
     $('#authPass').setAttribute('autocomplete', m==='login'?'current-password':'new-password');
     $('#forgotRow').style.display = m==='login' ? 'block' : 'none';
+    $('#usernameField').style.display = m==='login' ? 'none' : 'flex';
     clearAuthError();
   }
   $$('.auth-tab').forEach(t=>t.addEventListener('click',()=>setAuthMode(t.dataset.tab)));
@@ -3161,7 +3218,7 @@ window.NADOBET_CONFIG = {
       const st=u.status||'pending';
       const isPub=u.role==='publisher';
       const isMod=u.role==='moderator';
-      const initial=((u.email||'?')[0]||'?').toUpperCase();
+      const initial=((u.username||u.email||'?')[0]||'?').toUpperCase();
       const me=(currentUser&&u.id===currentUser.id);
       let actions='';
       if(me){ actions='<span style="font-size:9.5px;color:var(--ink-faint)">admin</span>'; }
@@ -3179,9 +3236,11 @@ window.NADOBET_CONFIG = {
         }
       }
       const roleBadge = isPub?'<span class="u-badge pub-badge">Publisher</span>':(isMod?'<span class="u-badge mod-badge">Modérateur</span>':'');
+      const uname = u.username ? escapeHTML(u.username) : '(sans pseudo)';
       return `<div class="user-row">
         <div class="u-av">${initial}</div>
-        <div class="u-meta"><div class="u-mail">${u.email||'(sans email)'}</div>
+        <div class="u-meta"><div class="u-mail">${uname}</div>
+          <div class="u-sub">${u.email||'(sans email)'}</div>
           <div class="u-badges"><span class="u-badge ${st}">${labels[st]||st}</span>${roleBadge}</div></div>
         <div class="u-actions">${actions}</div>
       </div>`;
