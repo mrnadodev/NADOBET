@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-   window.NADOBET_CONFIG = {
+ window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -347,6 +347,11 @@
   .u-btn.pub-off{color:var(--ink-dim);border-color:var(--line)}
   .u-btn.pub-off:hover{color:var(--red);border-color:rgba(255,93,108,.3);background:rgba(255,93,108,.08)}
   .u-badge.pub-badge{background:rgba(245,197,66,.14);color:var(--gold);margin-left:5px}
+  .u-btn.mod{color:#7cc5ff;border-color:rgba(124,197,255,.3)}
+  .u-btn.mod:hover{background:rgba(124,197,255,.12)}
+  .u-btn.mod-off{color:var(--ink-dim);border-color:var(--line)}
+  .u-btn.mod-off:hover{color:var(--red);border-color:rgba(255,93,108,.3);background:rgba(255,93,108,.08)}
+  .u-badge.mod-badge{background:rgba(124,197,255,.14);color:#7cc5ff;margin-left:5px}
   .users-empty{text-align:center;color:var(--ink-faint);font-size:11.5px;font-family:var(--mono);padding:20px}
   .live-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:pulse 1.6s infinite}
   .admin-close{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;
@@ -435,6 +440,20 @@
   .chat-reply-bar .crb-x{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:13px;padding:3px 6px;border-radius:5px}
   .chat-reply-bar .crb-x:hover{color:var(--red)}
   .chat-foot{font-size:11px;color:var(--ink-faint);margin-top:10px;line-height:1.5}
+  .chat-rooms{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .chat-room-tab{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;background:var(--panel-2);
+    border:1px solid var(--line);color:var(--ink-dim);padding:7px 13px;border-radius:8px;transition:.15s;position:relative}
+  .chat-room-tab:hover{color:var(--ink);border-color:var(--mint-dim)}
+  .chat-room-tab.on{background:var(--mint);color:var(--bg);border-color:var(--mint)}
+  .chat-room-tab .rt-dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid var(--panel);display:none}
+  .chat-room-tab.has-new .rt-dot{display:block}
+  .chat-rules{background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.22);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .cr-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;
+    cursor:pointer;padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--gold)}
+  .cr-chevron{transition:transform .2s}
+  .chat-rules.collapsed .cr-chevron{transform:rotate(-90deg)}
+  .cr-list{display:flex;flex-direction:column;gap:6px;padding:0 14px 12px;font-size:12px;color:var(--ink-dim);line-height:1.5}
+  .chat-rules.collapsed .cr-list{display:none}
   .chat-blocked{text-align:center;color:var(--gold);font-size:12px;font-family:var(--mono);padding:10px;
     background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);border-radius:9px}
   .scores-card{margin-top:22px}
@@ -1058,6 +1077,23 @@
       </span>
     </div>
     <div class="card-body">
+      <div class="chat-rules" id="chatRules">
+        <button class="cr-toggle" id="chatRulesToggle" aria-expanded="true">
+          <span>📌 Règles du chat</span><span class="cr-chevron">▾</span>
+        </button>
+        <div class="cr-list" id="chatRulesList">
+          <span>✅ Restez courtois et respectueux avec tout le monde.</span>
+          <span>🚫 Pas d'insultes, de spam, ni de publicité.</span>
+          <span>🔗 Les liens ne sont pas autorisés.</span>
+          <span>💸 Ne demandez jamais d'argent et ne partagez pas d'infos bancaires.</span>
+          <span>⚠️ Le chat sert à discuter — vérifiez toujours les cotes vous-même. Toute violation = blocage.</span>
+        </div>
+      </div>
+      <div class="chat-rooms" id="chatRooms">
+        <button class="chat-room-tab on" data-room="general">💬 Général</button>
+        <button class="chat-room-tab" data-room="surebets">🎯 Surebets</button>
+        <button class="chat-room-tab" data-room="debutants">🌱 Débutants</button>
+      </div>
       <div id="chatMessages" class="chat-messages"><div class="chat-loading">Chargement…</div></div>
       <div id="chatReplyBar" class="chat-reply-bar" style="display:none">
         <div class="crb-content">↩ Réponse à <b id="chatReplyName">—</b> · <span id="chatReplyText" class="crb-text">—</span></div>
@@ -2151,6 +2187,8 @@
   // Vérifie le statut du compte (approuvé / en attente / bloqué)
   let currentRole='user'; // 'user' | 'publisher' (admin géré séparément)
   let tourSeen=false;
+  let accountCreatedAt=null; // pour limiter les tout nouveaux comptes dans le chat
+  const NEW_USER_CHAT_DELAY=10*60*1000; // 10 minutes avant de pouvoir écrire
   async function fetchAccountStatus(user){
     // L'admin est toujours autorisé, sans dépendre de la table
     if(isAdmin(user)){ currentRole='admin'; }
@@ -2170,6 +2208,7 @@
     }catch(e){ console.error(e); return isAdmin(user)?'approved':'pending'; }
   }
   function canPublish(){ return currentRole==='admin' || currentRole==='publisher'; }
+  function canModerate(){ return currentRole==='admin' || currentRole==='moderator'; }
 
   function showAccessScreen(kind, email){
     // kind: 'pending' | 'blocked'
@@ -2208,6 +2247,7 @@
 
   async function enterApp(user){
     currentUser=user;
+    accountCreatedAt = user.created_at ? new Date(user.created_at).getTime() : null;
     // Contrôle d'accès : approbation / blocage
     const status=await fetchAccountStatus(user);
     if(status==='pending'){ showAccessScreen('pending',user.email); currentUser=null; return; }
@@ -2323,6 +2363,7 @@
   const CHAT_LIMIT=100; // nombre de messages chargés
   const CHAT_COOLDOWN=10000; // 10 s entre chaque message par utilisateur
   let chatUnread=0;
+  let currentRoom='general';
 
   function chatName(email){ return (email||'?').split('@')[0]; }
   function chatInitial(email){ return ((email||'?')[0]||'?').toUpperCase(); }
@@ -2366,8 +2407,14 @@
         const m=payload.new;
         if(!chatMsgs.some(x=>x.id===m.id)){
           chatMsgs.push(m); renderChat(true);
-          // message d'un autre utilisateur + chat non visible → incrémente le compteur
           const mine=currentUser&&m.user_id===currentUser.id;
+          const room=m.room||'general';
+          // point rouge sur l'onglet du salon si message dans un autre salon
+          if(!mine && room!==currentRoom){
+            const tab=document.querySelector('.chat-room-tab[data-room="'+room+'"]');
+            if(tab)tab.classList.add('has-new');
+          }
+          // compteur bulle flottante (message d'un autre, chat non visible)
           if(!mine && !chatInView()){ chatUnread++; }
           updateChatFab();
         }
@@ -2403,8 +2450,9 @@
   function renderChat(scroll){
     const box=$('#chatMessages'); if(!box)return;
     const admin=isAdmin(currentUser);
-    // Un message "supprimé" (deleted=true) reste visible pour l'admin seulement
-    const visible=chatMsgs.filter(m=>!m.deleted || admin);
+    const mod=canModerate(); // admin OU modérateur
+    // Filtre par salon + un message "supprimé" reste visible pour la modération
+    const visible=chatMsgs.filter(m=>(m.room||'general')===currentRoom && (!m.deleted || mod));
     if(!visible.length){ box.innerHTML='<div class="chat-empty">Aucun message. Soyez le premier à écrire !</div>'; return; }
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
     box.innerHTML=visible.map(m=>{
@@ -2418,11 +2466,11 @@
         const src=msgById(m.reply_to);
         if(src){ replyHtml=`<div class="cm-reply"><span class="cr-name">${escapeHTML(chatName(src.email))}</span><span class="cr-text">${escapeHTML((src.text||'').slice(0,80))}</span></div>`; }
       }
-      const canDelete = !del && (admin||mine);
+      const canDelete = !del && (mod||mine);
       const delBtn=canDelete?`<button class="cm-act" data-del="${m.id}" title="Supprimer">✕</button>`:'';
       const replyBtn=(!del)?`<button class="cm-act" data-reply="${m.id}" title="Répondre">↩</button>`:'';
       const textHtml = del
-        ? `<div class="cm-text deleted">🚫 Message supprimé${admin?' (visible admin)':''}${admin&&m.text?': <span class="cm-orig">'+escapeHTML(m.text)+'</span>':''}</div>`
+        ? `<div class="cm-text deleted">🚫 Message supprimé${mod?' (visible modération)':''}${mod&&m.text?': <span class="cm-orig">'+escapeHTML(m.text)+'</span>':''}</div>`
         : `<div class="cm-text">${escapeHTML(m.text)}</div>`;
       return `<div class="chat-msg ${mine?'mine':''} ${del?'is-deleted':''}">
         <div class="cm-av">${chatInitial(m.email)}</div>
@@ -2462,12 +2510,50 @@
     if(spamTimer)clearInterval(spamTimer);
     spamTimer=setInterval(tick,1000);
   }
+  // ----- Modération -----
+  // Liste de mots interdits (français, créole, anglais). Le filtre gère les variantes d'espacement.
+  const BAD_WORDS=['merde','putain','connard','connasse','salope','pute','encule','enculé','enfoiré','batard','bâtard',
+    'ta gueule','tg','fdp','ntm','pd','bitch','fuck','shit','asshole','bastard','nigger','faggot','cunt',
+    'kaka','bouzen','madivin','masisi','konyen','koulye','rache','gren','langèt','manman w','manman ou'];
+  function normalizeForFilter(s){
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // enlève accents
+      .replace(/[^a-z\s]/g,'');                        // enlève ponctuation/chiffres
+  }
+  function containsBadWord(text){
+    const n=' '+normalizeForFilter(text).replace(/\s+/g,' ')+' ';
+    return BAD_WORDS.some(w=>{
+      const wn=normalizeForFilter(w).replace(/\s+/g,' ');
+      return n.includes(' '+wn+' ') || n.includes(' '+wn) || n.includes(wn+' ');
+    });
+  }
+  function containsLink(text){
+    return /(https?:\/\/|www\.|t\.me\/|wa\.me\/|\b[a-z0-9-]+\.(com|net|org|io|co|ht|fr|me|xyz|info|link|app|shop|club|online|site|store|ml|tk|ga)\b)/i.test(text||'');
+  }
+
   async function sendChatMsg(){
     if(!sb||!currentUser)return;
     const input=$('#chatInput');
     const text=(input.value||'').trim();
     if(!text)return;
     if(text.length>500){ showToast('Message trop long',true); return; }
+    // Filtre de liens (sauf admin)
+    if(!isAdmin(currentUser) && containsLink(text)){
+      showToast('Les liens ne sont pas autorisés dans le chat',true); return;
+    }
+    // Filtre de mots interdits
+    if(containsBadWord(text)){
+      showToast('Message bloqué : langage inapproprié',true); return;
+    }
+    // Limite nouveaux comptes (sauf admin/publisher) : attendre X minutes après l'inscription
+    if(!isAdmin(currentUser) && currentRole!=='publisher' && accountCreatedAt){
+      const age=Date.now()-accountCreatedAt;
+      if(age<NEW_USER_CHAT_DELAY){
+        const mins=Math.ceil((NEW_USER_CHAT_DELAY-age)/60000);
+        showToast('Nouveau compte : vous pourrez écrire dans '+mins+' min',true);
+        return;
+      }
+    }
     // Minuteur : 10 s entre chaque message (si activé)
     if(cooldownOn){
       const now=Date.now();
@@ -2479,7 +2565,7 @@
         return;
       }
     }
-    const payload={user_id:currentUser.id, email:currentUser.email, text};
+    const payload={user_id:currentUser.id, email:currentUser.email, text, room:currentRoom};
     if(replyTo) payload.reply_to=replyTo;
     input.value=''; cancelReply();
     try{
@@ -2492,13 +2578,12 @@
   async function deleteChatMsg(id){
     if(!sb)return;
     const m=msgById(id); if(!m)return;
-    const admin=isAdmin(currentUser);
-    if(admin){
-      // admin : suppression définitive
+    if(canModerate()){
+      // admin/modérateur : suppression définitive
       chatMsgs=chatMsgs.filter(x=>x.id!==id); renderChat(false);
       try{ await sb.from('messages').delete().eq('id',id); }catch(err){ console.error(err); }
     }else{
-      // utilisateur : soft delete (reste visible pour l'admin)
+      // utilisateur : soft delete (reste visible pour la modération)
       m.deleted=true; renderChat(false);
       try{ await sb.from('messages').update({deleted:true}).eq('id',id); }catch(err){ console.error(err); }
     }
@@ -2549,6 +2634,19 @@
   $('#chatTimerToggle') && $('#chatTimerToggle').addEventListener('click',toggleCooldown);
   // Bulle de chat flottante
   $('#chatFab') && $('#chatFab').addEventListener('click',goToChat);
+  // Changement de salon
+  $$('#chatRooms .chat-room-tab').forEach(tab=>tab.addEventListener('click',()=>{
+    $$('#chatRooms .chat-room-tab').forEach(t=>t.classList.toggle('on',t===tab));
+    tab.classList.remove('has-new');
+    currentRoom=tab.dataset.room;
+    renderChat(true);
+  }));
+  // Règles du chat : replier/déplier
+  $('#chatRulesToggle') && $('#chatRulesToggle').addEventListener('click',()=>{
+    const box=$('#chatRules'); const collapsed=box.classList.toggle('collapsed');
+    $('#chatRulesToggle').setAttribute('aria-expanded', collapsed?'false':'true');
+    try{localStorage.setItem('nadobet_chat_rules', collapsed?'0':'1');}catch(e){}
+  });
   // Quand le chat devient visible en défilant, on efface le compteur
   window.addEventListener('scroll',()=>{
     if(chatInView() && chatUnread>0){ chatUnread=0; }
@@ -2959,12 +3057,14 @@
     const list=$('#usersList');
     const pending=users.filter(u=>u.status==='pending').length;
     const publishers=users.filter(u=>u.role==='publisher').length;
-    $('#usersSummary').textContent=users.length+' compte(s) · '+pending+' en attente · '+publishers+' publisher(s)';
+    const mods=users.filter(u=>u.role==='moderator').length;
+    $('#usersSummary').textContent=users.length+' compte(s) · '+pending+' en attente · '+publishers+' publisher(s) · '+mods+' modo(s)';
     if(!users.length){ list.innerHTML='<div class="users-empty">Aucun utilisateur inscrit.</div>'; return; }
     const labels={approved:'Autorisé',pending:'En attente',blocked:'Bloqué'};
     list.innerHTML=users.map(u=>{
       const st=u.status||'pending';
       const isPub=u.role==='publisher';
+      const isMod=u.role==='moderator';
       const initial=((u.email||'?')[0]||'?').toUpperCase();
       const me=(currentUser&&u.id===currentUser.id);
       let actions='';
@@ -2972,24 +3072,29 @@
       else {
         if(st!=='approved') actions+='<button class="u-btn ok" data-approve="'+u.id+'">Autoriser</button>';
         if(st!=='blocked') actions+='<button class="u-btn block" data-block="'+u.id+'">Bloquer</button>';
-        // toggle publisher (seulement pour comptes approuvés)
+        // rôles (seulement pour comptes approuvés)
         if(st==='approved'){
           actions += isPub
-            ? '<button class="u-btn pub-off" data-unpub="'+u.id+'">✕ Retirer publisher</button>'
-            : '<button class="u-btn pub" data-pub="'+u.id+'">☆ Rendre publisher</button>';
+            ? '<button class="u-btn pub-off" data-role="user:'+u.id+'">✕ Publisher</button>'
+            : '<button class="u-btn pub" data-role="publisher:'+u.id+'">☆ Publisher</button>';
+          actions += isMod
+            ? '<button class="u-btn mod-off" data-role="user:'+u.id+'">✕ Modo</button>'
+            : '<button class="u-btn mod" data-role="moderator:'+u.id+'">🛡 Modo</button>';
         }
       }
+      const roleBadge = isPub?'<span class="u-badge pub-badge">Publisher</span>':(isMod?'<span class="u-badge mod-badge">Modérateur</span>':'');
       return `<div class="user-row">
         <div class="u-av">${initial}</div>
         <div class="u-meta"><div class="u-mail">${u.email||'(sans email)'}</div>
-          <span class="u-badge ${st}">${labels[st]||st}</span>${isPub?'<span class="u-badge pub-badge">Publisher</span>':''}</div>
+          <span class="u-badge ${st}">${labels[st]||st}</span>${roleBadge}</div>
         <div class="u-actions">${actions}</div>
       </div>`;
     }).join('');
     $$('#usersList [data-approve]').forEach(b=>b.addEventListener('click',()=>setUserStatus(b.dataset.approve,'approved')));
     $$('#usersList [data-block]').forEach(b=>b.addEventListener('click',()=>setUserStatus(b.dataset.block,'blocked')));
-    $$('#usersList [data-pub]').forEach(b=>b.addEventListener('click',()=>setUserRole(b.dataset.pub,'publisher')));
-    $$('#usersList [data-unpub]').forEach(b=>b.addEventListener('click',()=>setUserRole(b.dataset.unpub,'user')));
+    $$('#usersList [data-role]').forEach(b=>b.addEventListener('click',()=>{
+      const [role,id]=b.dataset.role.split(':'); setUserRole(id,role);
+    }));
   }
 
   async function setUserRole(id,role){
@@ -2997,7 +3102,8 @@
     try{
       const {error}=await sb.from('profiles').update({role}).eq('id',id);
       if(error)throw error;
-      showToast(role==='publisher'?'Publisher activé ✓':'Publisher retiré');
+      const msg = role==='publisher'?'Publisher activé ✓' : role==='moderator'?'Modérateur activé ✓' : 'Rôle retiré';
+      showToast(msg);
       loadUsers();
     }catch(err){ console.error(err); showToast('Action impossible',true); }
   }
