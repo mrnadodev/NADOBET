@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -31,7 +31,6 @@
     TELEGRAM_BOT_TOKEN: "8995154321:AAE9LxkU9T9t0SuVzermRoGyt2bg3eidNtY",   // ex : "123456:ABC-DEF..."
     TELEGRAM_CHAT_ID:   "@nadobet_surebets"    // ex : "@nadobet_surebets" ou "-1001234567890"
   };
-
 </script>
 <style>
   :root{
@@ -1219,6 +1218,19 @@
       <span style="flex:1;font-size:11px;color:var(--ink-faint)">⚠️ Vérifiez toujours les cotes chez le bookmaker avant de miser.</span>
       <button class="btn primary" id="signalCloseBtn">Fermer</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== CONFIRMATION EMAIL RÉUSSIE ===== -->
+<div id="confirmModal" class="tour-modal" style="display:none">
+  <div class="tour-backdrop"></div>
+  <div class="tour-box" style="max-width:400px;text-align:center">
+    <div style="width:70px;height:70px;margin:0 auto 14px;border-radius:50%;background:rgba(47,230,168,.14);display:grid;place-items:center">
+      <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="var(--mint)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <div class="ts-title" style="font-size:20px">Email confirmé ✓</div>
+    <div class="ts-desc" style="margin:10px 0 20px">Votre adresse a bien été vérifiée. Vous pouvez maintenant vous connecter à votre compte NADOBET.</div>
+    <button class="btn primary" id="confirmLoginBtn" style="width:100%;justify-content:center;padding:12px">Se connecter</button>
   </div>
 </div>
 
@@ -2926,6 +2938,13 @@
   }
   $('#chatTimerToggle') && $('#chatTimerToggle').addEventListener('click',toggleCooldown);
 
+  $('#confirmLoginBtn') && $('#confirmLoginBtn').addEventListener('click',()=>{
+    $('#confirmModal').style.display='none';
+    showGate();
+    setAuthMode('login');
+    setTimeout(()=>$('#authEmail')&&$('#authEmail').focus(),100);
+  });
+
   /* ===== SONDAGES (POLLS) ===== */
   let activePoll=null;      // { id, question, options:[...], type, created_at }
   let myVotes={};           // poll_id -> option index (mon vote)
@@ -3761,6 +3780,18 @@
     const qs=window.location.search||'';
     if(hash.includes('type=recovery')||qs.includes('type=recovery')){
       recoveryHandled=true; enterRecoveryMode();
+    }
+
+    // Détecte l'arrivée via le lien de CONFIRMATION D'EMAIL (inscription)
+    const isEmailConfirm = /type=signup|type=email(?!_change)/.test(hash) || /type=signup|type=email(?!_change)/.test(qs);
+    if(isEmailConfirm && !recoveryHandled){
+      showGate();
+      // déconnecte la session auto pour forcer une vraie connexion volontaire
+      try{ await sb.auth.signOut(); }catch(e){}
+      // nettoie l'URL (enlève le hash/token) puis affiche l'écran de succès
+      try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
+      $('#confirmModal').style.display='flex';
+      return;
     }
 
     const {data}=await sb.auth.getSession();
