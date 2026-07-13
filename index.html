@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-    window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -452,6 +452,32 @@
   .chat-reply-bar .crb-x:hover{color:var(--red)}
   .chat-foot{font-size:11px;color:var(--ink-faint);margin-top:10px;line-height:1.5}
   .chat-rooms{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .active-poll{background:linear-gradient(135deg,rgba(47,230,168,.1),rgba(124,197,255,.06));
+    border:1px solid var(--mint-dim);border-radius:12px;padding:15px 16px;margin-bottom:14px}
+  .ap-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .ap-q{font-size:14px;font-weight:700;color:var(--ink);line-height:1.4}
+  .ap-tag{font-size:9.5px;font-family:var(--mono);color:var(--mint);background:rgba(47,230,168,.12);
+    padding:2px 7px;border-radius:5px;white-space:nowrap;flex:none}
+  .ap-opts{display:flex;flex-direction:column;gap:8px}
+  .ap-opt{position:relative;border:1px solid var(--line);border-radius:9px;padding:10px 13px;cursor:pointer;
+    overflow:hidden;transition:.15s;background:var(--panel-2)}
+  .ap-opt:hover{border-color:var(--mint-dim)}
+  .ap-opt.voted{border-color:var(--mint);cursor:default}
+  .ap-opt .ap-fill{position:absolute;inset:0;background:rgba(47,230,168,.12);width:0;transition:width .5s ease;z-index:0}
+  .ap-opt .ap-row{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .ap-opt .ap-label{font-size:13px;color:var(--ink);font-weight:600}
+  .ap-opt .ap-pct{font-family:var(--mono);font-size:12px;color:var(--ink-dim);font-weight:700}
+  .ap-opt .ap-check{color:var(--mint);font-size:13px}
+  .ap-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;
+    font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  .ap-close{background:none;border:1px solid var(--line);color:var(--ink-dim);cursor:pointer;
+    font-size:11px;font-weight:700;padding:5px 11px;border-radius:7px}
+  .ap-close:hover{color:var(--red);border-color:rgba(255,93,108,.3)}
+  .ap-voters{font-size:10.5px;color:var(--ink-faint);margin-top:8px;line-height:1.5;font-family:var(--mono)}
+  .poll-opt-row{display:flex;gap:8px;margin-bottom:7px}
+  .poll-opt-row input{flex:1}
+  .poll-opt-row .por-x{background:none;border:1px solid var(--line);color:var(--ink-faint);cursor:pointer;border-radius:7px;padding:0 10px}
+  .poll-opt-row .por-x:hover{color:var(--red)}
   .chat-room-tab{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;background:var(--panel-2);
     border:1px solid var(--line);color:var(--ink-dim);padding:7px 13px;border-radius:8px;transition:.15s;position:relative}
   .chat-room-tab:hover{color:var(--ink);border-color:var(--mint-dim)}
@@ -1090,6 +1116,7 @@
           </button>
         </h2><span class="sub">Discutez avec les autres parieurs · en direct</span></div></div>
       <span id="adminChatBtns" style="display:none">
+        <button class="btn ghost" id="chatPoll" style="padding:8px 14px;font-size:12px">📊 Sondage</button>
         <button class="btn ghost" id="chatTimerToggle" style="padding:8px 14px;font-size:12px">⏱️ Minuteur : ON</button>
         <button class="btn ghost" id="chatClear" style="padding:8px 14px;font-size:12px">🧹 Vider le chat</button>
       </span>
@@ -1112,6 +1139,7 @@
         <button class="chat-room-tab" data-room="surebets">🎯 Surebets</button>
         <button class="chat-room-tab" data-room="debutants">🌱 Débutants</button>
       </div>
+      <div id="activePoll" class="active-poll" style="display:none"></div>
       <div id="chatMessages" class="chat-messages"><div class="chat-loading">Chargement…</div></div>
       <div id="chatReplyBar" class="chat-reply-bar" style="display:none">
         <div class="crb-content">↩ Réponse à <b id="chatReplyName">—</b> · <span id="chatReplyText" class="crb-text">—</span></div>
@@ -1178,6 +1206,31 @@
       <span style="flex:1;font-size:11px;color:var(--ink-faint)">⚠️ Vérifiez toujours les cotes chez le bookmaker avant de miser.</span>
       <button class="btn primary" id="signalCloseBtn">Fermer</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== CRÉATION DE SONDAGE (admin) ===== -->
+<div id="pollModal" class="tour-modal" style="display:none">
+  <div class="tour-backdrop" id="pollBackdrop"></div>
+  <div class="tour-box" style="max-width:460px;text-align:left">
+    <button class="tour-skip" id="pollCancel">Annuler ✕</button>
+    <div class="ts-title" style="font-size:18px;text-align:center;margin-bottom:4px">📊 Créer un sondage</div>
+    <div class="ts-desc" style="text-align:center;margin-bottom:16px">Il s'affiche dans le salon Général. L'écriture est bloquée pendant le vote.</div>
+    <label class="fld" style="margin-bottom:12px"><span class="lab">Question</span>
+      <input type="text" id="pollQuestion" placeholder="ex : Qui a profité du surebet Barça-Real aujourd'hui ?" maxlength="140"></label>
+    <div style="margin-bottom:10px">
+      <span class="lab" style="display:block;margin-bottom:7px">Type</span>
+      <div class="seg" id="pollType">
+        <button class="on" data-ptype="yesno">Oui / Non</button>
+        <button data-ptype="multi">Choix multiple</button>
+      </div>
+    </div>
+    <div id="pollOptionsWrap" style="display:none;margin-bottom:12px">
+      <span class="lab" style="display:block;margin-bottom:7px">Options de réponse</span>
+      <div id="pollOptions"></div>
+      <button class="btn ghost" id="pollAddOpt" style="padding:7px 12px;font-size:12px;margin-top:6px">＋ Ajouter une option</button>
+    </div>
+    <button class="btn primary" id="pollCreate" style="width:100%;justify-content:center;padding:11px;margin-top:6px">Lancer le sondage</button>
   </div>
 </div>
 
@@ -2236,6 +2289,23 @@
     if(role==='moderator')return 'Moderator';
     return null;
   }
+  // Mots réservés interdits dans un nom d'utilisateur (protection anti-usurpation)
+  const RESERVED_USERNAMES=['nado','nadobet','nadobets','admin','administrateur','administrator',
+    'moderateur','moderator','modo','mod','publisher','publicateur','publisher','officiel','official',
+    'surebet','surebets','support','staff','system','systeme','root','owner','proprietaire'];
+  // Valide un nom d'utilisateur. Retourne un message d'erreur, ou '' si OK.
+  function validateUsername(username){
+    if(!/^[a-zA-Z0-9_.]{3,20}$/.test(username))
+      return 'Nom d\u2019utilisateur : 3 à 20 caractères, lettres, chiffres, _ ou . uniquement (sans espace).';
+    const low=username.toLowerCase();
+    // enlève chiffres/séparateurs pour comparer aux mots réservés
+    const stripped=low.replace(/[0-9_.]/g,'');
+    for(const w of RESERVED_USERNAMES){
+      if(low===w || low.includes(w) || stripped===w)
+        return 'Ce nom n\u2019est pas autorisé (mot réservé).';
+    }
+    return '';
+  }
   // Nom affiché d'un message pour l'utilisateur courant (respecte la confidentialité)
   function displayNameFor(msgEmail, msgUsername, msgRole){
     const alias=roleAlias(msgRole);
@@ -2333,6 +2403,7 @@
     startPresence(user);
     startSignals(user);
     startChat(user);
+    startPolls();
     chatUnread=0; updateChatFab();
     setTimeout(updateComposeState,300);
     if(!tourSeen) setTimeout(()=>startTour(),600);
@@ -2389,35 +2460,44 @@
     $('#usernameModal').style.display='flex';
     setTimeout(()=>$('#setupUsername').focus(),200);
   }
+  // Aide : exécute une promesse avec un délai maximum
+  function withTimeout(promise, ms, label){
+    return Promise.race([
+      promise,
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout:'+(label||''))), ms))
+    ]);
+  }
   async function submitUsernameSetup(){
     const err=$('#setupUsernameError');
     const username=($('#setupUsername').value||'').trim();
     err.style.display='none';
-    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){
-      err.textContent='3 à 20 caractères : lettres, chiffres, _ uniquement.'; err.style.display='block'; return;
+    if(!/^[a-zA-Z0-9_.]{3,20}$/.test(username)){
+      err.textContent='3 à 20 caractères : lettres, chiffres, _ ou . (sans espace).'; err.style.display='block'; return;
     }
+    const vErr=validateUsername(username);
+    if(vErr){ err.textContent=vErr; err.style.display='block'; return; }
+    if(!sb||!currentUser){ err.textContent='Session expirée, reconnectez-vous.'; err.style.display='block'; return; }
     const btn=$('#setupUsernameBtn'); const old='Valider'; btn.disabled=true; btn.textContent='…';
     const reset=()=>{ btn.disabled=false; btn.textContent=old; };
+    const showErr=(msg)=>{ err.textContent=msg; err.style.display='block'; reset(); };
     try{
-      // vérifie l'unicité (si ça échoue, on n'empêche pas l'enregistrement)
+      // vérifie l'unicité (facultatif : si ça traîne ou échoue, on n'empêche pas l'enregistrement)
       try{
-        const {data:taken,error:qErr}=await sb.from('profiles').select('id').ilike('username',username).limit(1);
+        const {data:taken,error:qErr}=await withTimeout(
+          sb.from('profiles').select('id').ilike('username',username).limit(1), 4000, 'check');
         if(!qErr && taken && taken.length && taken[0].id!==currentUser.id){
-          err.textContent='Ce nom d\u2019utilisateur est déjà pris.'; err.style.display='block'; reset(); return;
+          return showErr('Ce nom d\u2019utilisateur est déjà pris.');
         }
-      }catch(_){/* colonne peut-être absente : on continue */}
+      }catch(_){/* timeout ou colonne absente : on tente quand même l'enregistrement */}
 
-      const {error}=await sb.from('profiles').update({username}).eq('id',currentUser.id);
+      const {error}=await withTimeout(
+        sb.from('profiles').update({username}).eq('id',currentUser.id), 6000, 'update');
       if(error){
-        // message clair si la colonne n'existe pas encore
-        if(/column .*username/i.test(error.message||'')){
-          err.textContent='La base n\u2019est pas prête (colonne username manquante). Voir le guide.';
-        }else if((error.code==='23505')||/duplicate|unique/i.test(error.message||'')){
-          err.textContent='Ce nom d\u2019utilisateur est déjà pris.';
-        }else{
-          err.textContent='Erreur : '+(error.message||'réessayez.');
-        }
-        err.style.display='block'; reset(); return;
+        if(/column .*username/i.test(error.message||''))
+          return showErr('La base n\u2019est pas prête : exécutez le SQL « username » (voir le guide).');
+        if((error.code==='23505')||/duplicate|unique/i.test(error.message||''))
+          return showErr('Ce nom d\u2019utilisateur est déjà pris.');
+        return showErr('Erreur : '+(error.message||'réessayez.'));
       }
       currentUsername=username;
       $('#usernameModal').style.display='none';
@@ -2425,7 +2505,10 @@
       enterApp(currentUser);
     }catch(e){
       console.error(e);
-      err.textContent='Erreur réseau, réessayez.'; err.style.display='block'; reset();
+      if(/timeout/.test(e.message||''))
+        showErr('La base ne répond pas. Vérifiez que le SQL « username » est exécuté et vos droits (RLS), puis réessayez.');
+      else
+        showErr('Erreur réseau, réessayez.');
     }
   }
   $('#setupUsernameBtn') && $('#setupUsernameBtn').addEventListener('click',submitUsernameSetup);
@@ -2818,15 +2901,168 @@
     }catch(err){ console.error(err); showToast('Impossible de changer le réglage',true); }
   }
   $('#chatTimerToggle') && $('#chatTimerToggle').addEventListener('click',toggleCooldown);
+
+  /* ===== SONDAGES (POLLS) ===== */
+  let activePoll=null;      // { id, question, options:[...], type, created_at }
+  let myVotes={};           // poll_id -> option index (mon vote)
+  let pollChannel=null;
+
+  async function startPolls(){
+    if(!sb||pollChannel)return;
+    await loadActivePoll();
+    pollChannel=sb.channel('nadobet_polls')
+      .on('postgres_changes',{event:'*',schema:'public',table:'polls'},()=>{ loadActivePoll(); })
+      .on('postgres_changes',{event:'*',schema:'public',table:'poll_votes'},()=>{ if(activePoll) loadPollVotes(activePoll.id); })
+      .subscribe();
+  }
+  async function stopPolls(){
+    if(pollChannel){ try{await sb.removeChannel(pollChannel);}catch(e){} pollChannel=null; }
+    activePoll=null; myVotes={};
+  }
+  async function loadActivePoll(){
+    if(!sb)return;
+    try{
+      const {data,error}=await sb.from('polls').select('*').eq('active',true).order('created_at',{ascending:false}).limit(1);
+      if(error)throw error;
+      activePoll = (data&&data[0])||null;
+      if(activePoll){ await loadPollVotes(activePoll.id); }
+      else { renderActivePoll(); }
+      updateComposeState();
+    }catch(err){ /* table peut-être absente */ activePoll=null; renderActivePoll(); }
+  }
+  let pollVotes=[]; // [{user_id, username, option_index}]
+  async function loadPollVotes(pollId){
+    if(!sb)return;
+    try{
+      const {data}=await sb.from('poll_votes').select('*').eq('poll_id',pollId);
+      pollVotes=data||[];
+      const mine=pollVotes.find(v=>v.user_id===currentUser.id);
+      if(mine) myVotes[pollId]=mine.option_index;
+      renderActivePoll();
+    }catch(e){ renderActivePoll(); }
+  }
+  function renderActivePoll(){
+    const box=$('#activePoll'); if(!box)return;
+    if(!activePoll || currentRoom!=='general'){ box.style.display='none'; return; }
+    box.style.display='block';
+    let opts=[]; try{ opts=Array.isArray(activePoll.options)?activePoll.options:JSON.parse(activePoll.options||'[]'); }catch(e){ opts=[]; }
+    const total=pollVotes.length;
+    const myVote=myVotes[activePoll.id];
+    const voted=(myVote!==undefined);
+    const admin=isAdmin(currentUser);
+    const optsHtml=opts.map((o,i)=>{
+      const count=pollVotes.filter(v=>v.option_index===i).length;
+      const pct=total?Math.round(count/total*100):0;
+      const isMine=(myVote===i);
+      return `<div class="ap-opt ${voted?'voted':''} ${isMine?'mine':''}" ${voted?'':'data-vote="'+i+'"'}>
+        <div class="ap-fill" style="width:${voted?pct:0}%"></div>
+        <div class="ap-row"><span class="ap-label">${isMine?'✓ ':''}${escapeHTML(o)}</span>
+          ${voted?`<span class="ap-pct">${pct}% · ${count}</span>`:''}</div>
+      </div>`;
+    }).join('');
+    // liste des votants (admin uniquement)
+    let voters='';
+    if(admin && total){
+      voters='<div class="ap-voters">👁 '+pollVotes.map(v=>{
+        const name=v.username||'?'; const oi=v.option_index;
+        return escapeHTML(name)+'→'+(opts[oi]!==undefined?escapeHTML(opts[oi]):'?');
+      }).join(' · ')+'</div>';
+    }
+    box.innerHTML=`<div class="ap-head"><div class="ap-q">📊 ${escapeHTML(activePoll.question)}</div>
+        <span class="ap-tag">SONDAGE</span></div>
+      <div class="ap-opts">${optsHtml}</div>
+      <div class="ap-foot"><span>${total} vote(s)${voted?' · merci !':''}</span>
+        ${admin?'<button class="ap-close" id="pollClose">Clôturer le sondage</button>':''}</div>
+      ${voters}`;
+    if(!voted){ $$('#activePoll [data-vote]').forEach(el=>el.addEventListener('click',()=>castVote(activePoll.id,parseInt(el.dataset.vote)))); }
+    const cl=$('#pollClose'); if(cl)cl.addEventListener('click',closePoll);
+  }
+  async function castVote(pollId,optionIndex){
+    if(!sb||!currentUser)return;
+    myVotes[pollId]=optionIndex; renderActivePoll();
+    try{
+      await sb.from('poll_votes').upsert({poll_id:pollId, user_id:currentUser.id, username:currentUsername||chatName(currentUser.email), option_index:optionIndex},{onConflict:'poll_id,user_id'});
+    }catch(err){ console.error(err); showToast('Vote impossible',true); }
+  }
+  async function closePoll(){
+    if(!sb||!isAdmin(currentUser)||!activePoll)return;
+    if(!confirm('Clôturer ce sondage ? L\u2019écriture sera réactivée.'))return;
+    try{
+      await sb.from('polls').update({active:false}).eq('id',activePoll.id);
+      activePoll=null; renderActivePoll(); updateComposeState();
+      showToast('Sondage clôturé ✓');
+    }catch(err){ console.error(err); showToast('Action impossible',true); }
+  }
+
+  // --- Création de sondage (admin) ---
+  let pollType='yesno';
+  function openPollModal(){
+    if(!isAdmin(currentUser))return;
+    $('#pollQuestion').value='';
+    pollType='yesno';
+    $$('#pollType button').forEach(b=>b.classList.toggle('on',b.dataset.ptype==='yesno'));
+    $('#pollOptionsWrap').style.display='none';
+    $('#pollOptions').innerHTML='';
+    $('#pollModal').style.display='flex';
+    setTimeout(()=>$('#pollQuestion').focus(),200);
+  }
+  function addPollOption(val){
+    const row=document.createElement('div'); row.className='poll-opt-row';
+    row.innerHTML=`<input type="text" class="poll-opt" placeholder="Option" maxlength="60" value="${val||''}">
+      <button type="button" class="por-x">✕</button>`;
+    row.querySelector('.por-x').addEventListener('click',()=>row.remove());
+    $('#pollOptions').appendChild(row);
+  }
+  $('#chatPoll') && $('#chatPoll').addEventListener('click',openPollModal);
+  $('#pollCancel') && $('#pollCancel').addEventListener('click',()=>$('#pollModal').style.display='none');
+  $('#pollBackdrop') && $('#pollBackdrop').addEventListener('click',()=>$('#pollModal').style.display='none');
+  $$('#pollType button').forEach(b=>b.addEventListener('click',()=>{
+    $$('#pollType button').forEach(x=>x.classList.toggle('on',x===b));
+    pollType=b.dataset.ptype;
+    const multi=(pollType==='multi');
+    $('#pollOptionsWrap').style.display=multi?'block':'none';
+    if(multi && !$('#pollOptions').children.length){ addPollOption('Oui'); addPollOption('Non'); }
+  }));
+  $('#pollAddOpt') && $('#pollAddOpt').addEventListener('click',()=>addPollOption(''));
+  $('#pollCreate') && $('#pollCreate').addEventListener('click',createPoll);
+
+  async function createPoll(){
+    if(!sb||!isAdmin(currentUser))return;
+    const q=($('#pollQuestion').value||'').trim();
+    if(!q){ showToast('Écrivez une question',true); return; }
+    let options=[];
+    if(pollType==='yesno'){ options=['Oui','Non']; }
+    else{
+      options=$$('#pollOptions .poll-opt').map(i=>(i.value||'').trim()).filter(Boolean);
+      if(options.length<2){ showToast('Ajoutez au moins 2 options',true); return; }
+    }
+    const btn=$('#pollCreate'); btn.disabled=true; const old=btn.textContent; btn.textContent='…';
+    try{
+      // désactive tout sondage encore actif
+      await sb.from('polls').update({active:false}).eq('active',true);
+      const {error}=await sb.from('polls').insert({question:q, options, ptype:pollType, active:true, author_id:currentUser.id});
+      if(error)throw error;
+      $('#pollModal').style.display='none';
+      showToast('Sondage lancé ✓');
+      loadActivePoll();
+    }catch(err){ console.error(err);
+      showToast(/relation .*polls/i.test(err.message||'')?'Table « polls » manquante (voir le guide)':'Échec du sondage',true);
+    }finally{ btn.disabled=false; btn.textContent=old; }
+  }
   // Bulle de chat flottante
   $('#chatFab') && $('#chatFab').addEventListener('click',goToChat);
-  // Active/désactive la zone d'écriture selon le salon et les droits
+  // Active/désactive la zone d'écriture selon le salon, les droits et un sondage en cours
   function updateComposeState(){
     const input=$('#chatInput'), btn=$('#chatSend');
     if(!input)return;
-    const locked = (currentRoom==='surebets' && !canPublish());
+    const surebetLock = (currentRoom==='surebets' && !canPublish());
+    // sondage actif dans Général → écriture bloquée pour tous sauf admin
+    const pollLock = (activePoll && currentRoom==='general' && !isAdmin(currentUser));
+    const locked = surebetLock || pollLock;
     input.disabled=locked; btn.disabled=locked;
-    input.placeholder = locked ? '🔒 Salon réservé aux surebets officiels (lecture seule)' : 'Écrivez un message…';
+    input.placeholder = surebetLock ? '🔒 Salon réservé aux surebets officiels (lecture seule)'
+      : pollLock ? '🗳️ Sondage en cours — écriture suspendue, votez ci-dessus'
+      : 'Écrivez un message…';
   }
   // Changement de salon
   $$('#chatRooms .chat-room-tab').forEach(tab=>tab.addEventListener('click',()=>{
@@ -2834,6 +3070,7 @@
     tab.classList.remove('has-new');
     currentRoom=tab.dataset.room;
     renderChat(true);
+    renderActivePoll();
     updateComposeState();
   }));
   // Règles du chat : replier/déplier
@@ -3146,8 +3383,8 @@
     const email=$('#authEmail').value.trim(), pass=$('#authPass').value;
     const username=($('#authUsername').value||'').trim();
     if(!username)return authError('Choisissez un nom d\u2019utilisateur.');
-    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username))
-      return authError('Nom d\u2019utilisateur : 3 à 20 caractères, lettres/chiffres/_ uniquement.');
+    const vErr=validateUsername(username);
+    if(vErr) return authError(vErr);
     if(!email||!pass)return authError('Entrez un email et un mot de passe (min. 6 caractères).');
     // Vérifie que le username n'est pas déjà pris
     try{
@@ -3167,6 +3404,7 @@
     await stopPresence();
     await stopSignals();
     await stopChat();
+    await stopPolls();
     if(sb)await sb.auth.signOut();
     currentUser=null;history=[];renderHistory();showGate();
     $('#adminHistBtns').style.display='none';
