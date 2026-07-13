@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-  window.NADOBET_CONFIG = {
+    window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -2396,22 +2396,37 @@
     if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){
       err.textContent='3 à 20 caractères : lettres, chiffres, _ uniquement.'; err.style.display='block'; return;
     }
-    const btn=$('#setupUsernameBtn'); btn.disabled=true; const old=btn.textContent; btn.textContent='…';
+    const btn=$('#setupUsernameBtn'); const old='Valider'; btn.disabled=true; btn.textContent='…';
+    const reset=()=>{ btn.disabled=false; btn.textContent=old; };
     try{
-      // vérifie l'unicité
-      const {data:taken}=await sb.from('profiles').select('id').ilike('username',username).limit(1);
-      if(taken && taken.length && taken[0].id!==currentUser.id){
-        err.textContent='Ce nom d\u2019utilisateur est déjà pris.'; err.style.display='block';
-        btn.disabled=false; btn.textContent=old; return;
-      }
+      // vérifie l'unicité (si ça échoue, on n'empêche pas l'enregistrement)
+      try{
+        const {data:taken,error:qErr}=await sb.from('profiles').select('id').ilike('username',username).limit(1);
+        if(!qErr && taken && taken.length && taken[0].id!==currentUser.id){
+          err.textContent='Ce nom d\u2019utilisateur est déjà pris.'; err.style.display='block'; reset(); return;
+        }
+      }catch(_){/* colonne peut-être absente : on continue */}
+
       const {error}=await sb.from('profiles').update({username}).eq('id',currentUser.id);
-      if(error)throw error;
+      if(error){
+        // message clair si la colonne n'existe pas encore
+        if(/column .*username/i.test(error.message||'')){
+          err.textContent='La base n\u2019est pas prête (colonne username manquante). Voir le guide.';
+        }else if((error.code==='23505')||/duplicate|unique/i.test(error.message||'')){
+          err.textContent='Ce nom d\u2019utilisateur est déjà pris.';
+        }else{
+          err.textContent='Erreur : '+(error.message||'réessayez.');
+        }
+        err.style.display='block'; reset(); return;
+      }
       currentUsername=username;
       $('#usernameModal').style.display='none';
-      // relance l'entrée dans l'app maintenant que le username existe
+      reset();
       enterApp(currentUser);
-    }catch(e){ console.error(e); err.textContent='Erreur, réessayez.'; err.style.display='block';
-      btn.disabled=false; btn.textContent=old; }
+    }catch(e){
+      console.error(e);
+      err.textContent='Erreur réseau, réessayez.'; err.style.display='block'; reset();
+    }
   }
   $('#setupUsernameBtn') && $('#setupUsernameBtn').addEventListener('click',submitUsernameSetup);
   $('#setupUsername') && $('#setupUsername').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitUsernameSetup(); } });
