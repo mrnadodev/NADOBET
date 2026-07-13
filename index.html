@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
- window.NADOBET_CONFIG = {
+  window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -1181,6 +1181,26 @@
   </div>
 </div>
 
+<!-- ===== CHOIX DE NOM D'UTILISATEUR (comptes existants) ===== -->
+<div id="usernameModal" class="tour-modal" style="display:none">
+  <div class="tour-backdrop"></div>
+  <div class="tour-box" style="max-width:420px">
+    <div style="text-align:center">
+      <div style="font-size:34px;margin-bottom:8px">👤</div>
+      <div class="ts-title" style="font-size:19px">Choisissez votre nom d'utilisateur</div>
+      <div class="ts-desc" style="margin:10px 0 18px">Pour protéger votre vie privée, votre email ne sera plus affiché. Choisissez un nom d'utilisateur — il sera <b>définitif</b>.</div>
+    </div>
+    <div class="auth-field" style="margin-bottom:12px">
+      <span class="auth-ico">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <input type="text" id="setupUsername" placeholder="Nom d'utilisateur" autocomplete="off" maxlength="20">
+    </div>
+    <div id="setupUsernameError" class="auth-error" style="display:none;margin-bottom:10px"></div>
+    <button class="btn primary" id="setupUsernameBtn" style="width:100%;justify-content:center;padding:11px">Valider</button>
+  </div>
+</div>
+
 <!-- ===== TOUR GUIDÉ (onboarding) ===== -->
 <div id="tourModal" class="tour-modal" style="display:none">
   <div class="tour-backdrop"></div>
@@ -2291,6 +2311,13 @@
     const status=await fetchAccountStatus(user);
     if(status==='pending'){ showAccessScreen('pending',user.email); currentUser=null; return; }
     if(status==='blocked'){ showAccessScreen('blocked',user.email); currentUser=null; return; }
+    // Comptes existants sans nom d'utilisateur : on le demande avant d'entrer (sauf admin)
+    if(!currentUsername && !isAdmin(user)){
+      restoreAuthForm();
+      $('#authGate').classList.add('hidden');
+      promptUsernameSetup();
+      return;
+    }
     restoreAuthForm();
     $('#authGate').classList.add('hidden');
     $('#userChip').style.display='';$('#userEmail').textContent=user.email;
@@ -2354,6 +2381,40 @@
   // Bouton pour rouvrir le tour manuellement (optionnel via logo)
   window.NADOBET_showTour=startTour;
   $('#tourBtn') && $('#tourBtn').addEventListener('click',startTour);
+
+  /* ===== CHOIX USERNAME (comptes existants) ===== */
+  function promptUsernameSetup(){
+    $('#setupUsername').value='';
+    $('#setupUsernameError').style.display='none';
+    $('#usernameModal').style.display='flex';
+    setTimeout(()=>$('#setupUsername').focus(),200);
+  }
+  async function submitUsernameSetup(){
+    const err=$('#setupUsernameError');
+    const username=($('#setupUsername').value||'').trim();
+    err.style.display='none';
+    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){
+      err.textContent='3 à 20 caractères : lettres, chiffres, _ uniquement.'; err.style.display='block'; return;
+    }
+    const btn=$('#setupUsernameBtn'); btn.disabled=true; const old=btn.textContent; btn.textContent='…';
+    try{
+      // vérifie l'unicité
+      const {data:taken}=await sb.from('profiles').select('id').ilike('username',username).limit(1);
+      if(taken && taken.length && taken[0].id!==currentUser.id){
+        err.textContent='Ce nom d\u2019utilisateur est déjà pris.'; err.style.display='block';
+        btn.disabled=false; btn.textContent=old; return;
+      }
+      const {error}=await sb.from('profiles').update({username}).eq('id',currentUser.id);
+      if(error)throw error;
+      currentUsername=username;
+      $('#usernameModal').style.display='none';
+      // relance l'entrée dans l'app maintenant que le username existe
+      enterApp(currentUser);
+    }catch(e){ console.error(e); err.textContent='Erreur, réessayez.'; err.style.display='block';
+      btn.disabled=false; btn.textContent=old; }
+  }
+  $('#setupUsernameBtn') && $('#setupUsernameBtn').addEventListener('click',submitUsernameSetup);
+  $('#setupUsername') && $('#setupUsername').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitUsernameSetup(); } });
 
   /* ===== PRÉSENCE (qui est en ligne) ===== */
   function startPresence(user){
