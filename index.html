@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-window.NADOBET_CONFIG = {
+ window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -31,6 +31,7 @@ window.NADOBET_CONFIG = {
     TELEGRAM_BOT_TOKEN: "8995154321:AAE9LxkU9T9t0SuVzermRoGyt2bg3eidNtY",   // ex : "123456:ABC-DEF..."
     TELEGRAM_CHAT_ID:   "@nadobet_surebets"    // ex : "@nadobet_surebets" ou "-1001234567890"
   };
+
 </script>
 <style>
   :root{
@@ -382,6 +383,7 @@ window.NADOBET_CONFIG = {
   .chat-msg .cm-del:hover{color:var(--red);background:rgba(255,93,108,.1)}
   .chat-compose{display:flex;gap:10px}
   .chat-compose input{flex:1}
+  #chatTimerToggle.timer-off{color:var(--gold);border-color:rgba(245,197,66,.4)}
   .chat-msg .cm-actions{display:flex;flex-direction:column;gap:3px;align-self:center;opacity:0;transition:.15s}
   .chat-msg:hover .cm-actions{opacity:1}
   .cm-act{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px}
@@ -1017,6 +1019,7 @@ window.NADOBET_CONFIG = {
           </button>
         </h2><span class="sub">Discutez avec les autres parieurs · en direct</span></div></div>
       <span id="adminChatBtns" style="display:none">
+        <button class="btn ghost" id="chatTimerToggle" style="padding:8px 14px;font-size:12px">⏱️ Minuteur : ON</button>
         <button class="btn ghost" id="chatClear" style="padding:8px 14px;font-size:12px">🧹 Vider le chat</button>
       </span>
     </div>
@@ -2211,10 +2214,9 @@ window.NADOBET_CONFIG = {
   }
 
   /* ===== CHAT COMMUNAUTAIRE ===== */
-  let chatChannel=null, chatMsgs=[], replyTo=null, lastSentTimes=[];
+  let chatChannel=null, chatMsgs=[], replyTo=null, lastMsgTime=0, cooldownOn=true;
   const CHAT_LIMIT=100; // nombre de messages chargés
-  const SPAM_WINDOW=10000; // 10 s
-  const SPAM_MAX=5;        // max 5 messages / 10 s
+  const CHAT_COOLDOWN=10000; // 10 s entre chaque message par utilisateur
 
   function chatName(email){ return (email||'?').split('@')[0]; }
   function chatInitial(email){ return ((email||'?')[0]||'?').toUpperCase(); }
@@ -2222,6 +2224,7 @@ window.NADOBET_CONFIG = {
 
   async function startChat(user){
     if(!sb||chatChannel)return;
+    await loadCooldownSetting();
     await loadChatMessages();
     chatChannel=sb.channel('nadobet_chat')
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},payload=>{
@@ -2234,6 +2237,10 @@ window.NADOBET_CONFIG = {
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'messages'},payload=>{
         chatMsgs=chatMsgs.filter(x=>x.id!==payload.old.id); renderChat(false);
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'app_settings'},payload=>{
+        const r=payload.new;
+        if(r && r.key==='chat_cooldown'){ cooldownOn = r.value!=='off'; updateTimerBtn(); }
       })
       .subscribe();
   }
@@ -2299,12 +2306,20 @@ window.NADOBET_CONFIG = {
     $('#chatInput').focus();
   }
   function cancelReply(){ replyTo=null; $('#chatReplyBar').style.display='none'; }
-  function spamCheck(){
-    const now=Date.now();
-    lastSentTimes=lastSentTimes.filter(t=>now-t<SPAM_WINDOW);
-    if(lastSentTimes.length>=SPAM_MAX) return false;
-    lastSentTimes.push(now);
-    return true;
+  let spamTimer=null;
+  function lockChatFor(seconds){
+    const btn=$('#chatSend'), input=$('#chatInput');
+    if(!btn)return;
+    let left=seconds;
+    btn.disabled=true; input.disabled=true;
+    const tick=()=>{
+      btn.textContent=left+'s';
+      if(left<=0){ clearInterval(spamTimer); spamTimer=null; btn.disabled=false; input.disabled=false; btn.textContent='Envoyer'; }
+      left--;
+    };
+    tick();
+    if(spamTimer)clearInterval(spamTimer);
+    spamTimer=setInterval(tick,1000);
   }
   async function sendChatMsg(){
     if(!sb||!currentUser)return;
@@ -2312,13 +2327,25 @@ window.NADOBET_CONFIG = {
     const text=(input.value||'').trim();
     if(!text)return;
     if(text.length>500){ showToast('Message trop long',true); return; }
-    if(!spamCheck()){ showToast('Doucement — trop de messages d\u2019affilée',true); return; }
+    // Minuteur : 10 s entre chaque message (si activé)
+    if(cooldownOn){
+      const now=Date.now();
+      const elapsed=now-lastMsgTime;
+      if(lastMsgTime && elapsed<CHAT_COOLDOWN){
+        const wait=Math.ceil((CHAT_COOLDOWN-elapsed)/1000);
+        showToast('Attendez '+wait+' s avant le prochain message',true);
+        lockChatFor(wait);
+        return;
+      }
+    }
     const payload={user_id:currentUser.id, email:currentUser.email, text};
     if(replyTo) payload.reply_to=replyTo;
     input.value=''; cancelReply();
     try{
       const {error}=await sb.from('messages').insert(payload);
       if(error)throw error;
+      lastMsgTime=Date.now();
+      if(cooldownOn) lockChatFor(CHAT_COOLDOWN/1000); // bloque 10 s après envoi réussi
     }catch(err){ console.error(err); showToast('Échec de l\u2019envoi du message',true); input.value=text; }
   }
   async function deleteChatMsg(id){
@@ -2354,6 +2381,31 @@ window.NADOBET_CONFIG = {
   $('#chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChatMsg(); } });
   $('#chatReplyCancel') && $('#chatReplyCancel').addEventListener('click',cancelReply);
   $('#chatClear') && $('#chatClear').addEventListener('click',clearChat);
+
+  // Minuteur du chat : activer/désactiver (admin), partagé via Supabase
+  function updateTimerBtn(){
+    const b=$('#chatTimerToggle'); if(!b)return;
+    b.textContent = cooldownOn ? '⏱️ Minuteur : ON' : '⏱️ Minuteur : OFF';
+    b.classList.toggle('timer-off', !cooldownOn);
+  }
+  async function loadCooldownSetting(){
+    if(!sb)return;
+    try{
+      const {data,error}=await sb.from('app_settings').select('value').eq('key','chat_cooldown').single();
+      if(!error && data){ cooldownOn = data.value!=='off'; }
+    }catch(e){}
+    updateTimerBtn();
+  }
+  async function toggleCooldown(){
+    if(!sb||!isAdmin(currentUser))return;
+    cooldownOn=!cooldownOn;
+    updateTimerBtn();
+    try{
+      await sb.from('app_settings').upsert({key:'chat_cooldown', value:cooldownOn?'on':'off'});
+      showToast(cooldownOn?'Minuteur activé ✓':'Minuteur désactivé');
+    }catch(err){ console.error(err); showToast('Impossible de changer le réglage',true); }
+  }
+  $('#chatTimerToggle') && $('#chatTimerToggle').addEventListener('click',toggleCooldown);
   $('#chatEye').addEventListener('click',()=>{
     const eye=$('#chatEye'), card=$('#chatCard');
     const on=!eye.classList.contains('on');
