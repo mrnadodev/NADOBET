@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
-window.NADOBET_CONFIG = {
+  window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -478,6 +478,18 @@ window.NADOBET_CONFIG = {
   .poll-opt-row input{flex:1}
   .poll-opt-row .por-x{background:none;border:1px solid var(--line);color:var(--ink-faint);cursor:pointer;border-radius:7px;padding:0 10px}
   .poll-opt-row .por-x:hover{color:var(--red)}
+  .pa-item{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px;margin-bottom:12px}
+  .pa-q{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:4px}
+  .pa-date{font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);margin-bottom:10px}
+  .pa-opt{margin-bottom:7px}
+  .pa-opt-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  .pa-opt-label{color:var(--ink)}
+  .pa-opt-val{font-family:var(--mono);color:var(--mint);font-weight:700}
+  .pa-bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+  .pa-bar span{display:block;height:100%;background:var(--mint);border-radius:4px}
+  .pa-voters{font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);margin-top:9px;line-height:1.6;
+    border-top:1px solid var(--line-soft);padding-top:8px}
+  .pa-empty{text-align:center;color:var(--ink-faint);font-family:var(--mono);font-size:12px;padding:24px}
   .chat-room-tab{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;background:var(--panel-2);
     border:1px solid var(--line);color:var(--ink-dim);padding:7px 13px;border-radius:8px;transition:.15s;position:relative}
   .chat-room-tab:hover{color:var(--ink);border-color:var(--mint-dim)}
@@ -1117,6 +1129,7 @@ window.NADOBET_CONFIG = {
         </h2><span class="sub">Discutez avec les autres parieurs · en direct</span></div></div>
       <span id="adminChatBtns" style="display:none">
         <button class="btn ghost" id="chatPoll" style="padding:8px 14px;font-size:12px">📊 Sondage</button>
+        <button class="btn ghost" id="chatPollArchive" style="padding:8px 14px;font-size:12px">🗂 Résultats</button>
         <button class="btn ghost" id="chatTimerToggle" style="padding:8px 14px;font-size:12px">⏱️ Minuteur : ON</button>
         <button class="btn ghost" id="chatClear" style="padding:8px 14px;font-size:12px">🧹 Vider le chat</button>
       </span>
@@ -1206,6 +1219,17 @@ window.NADOBET_CONFIG = {
       <span style="flex:1;font-size:11px;color:var(--ink-faint)">⚠️ Vérifiez toujours les cotes chez le bookmaker avant de miser.</span>
       <button class="btn primary" id="signalCloseBtn">Fermer</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== ARCHIVE DES SONDAGES (admin) ===== -->
+<div id="pollArchiveModal" class="tour-modal" style="display:none">
+  <div class="tour-backdrop" id="pollArchiveBackdrop"></div>
+  <div class="tour-box" style="max-width:520px;text-align:left;max-height:82vh;display:flex;flex-direction:column">
+    <button class="tour-skip" id="pollArchiveClose">Fermer ✕</button>
+    <div class="ts-title" style="font-size:18px;text-align:center;margin-bottom:4px">🗂 Résultats des sondages</div>
+    <div class="ts-desc" style="text-align:center;margin-bottom:14px">Historique et statistiques de la communauté</div>
+    <div id="pollArchiveList" style="overflow-y:auto;flex:1"></div>
   </div>
 </div>
 
@@ -3048,6 +3072,44 @@ window.NADOBET_CONFIG = {
     }catch(err){ console.error(err);
       showToast(/relation .*polls/i.test(err.message||'')?'Table « polls » manquante (voir le guide)':'Échec du sondage',true);
     }finally{ btn.disabled=false; btn.textContent=old; }
+  }
+
+  // --- Archive / résultats des sondages (admin) ---
+  $('#chatPollArchive') && $('#chatPollArchive').addEventListener('click',openPollArchive);
+  $('#pollArchiveClose') && $('#pollArchiveClose').addEventListener('click',()=>$('#pollArchiveModal').style.display='none');
+  $('#pollArchiveBackdrop') && $('#pollArchiveBackdrop').addEventListener('click',()=>$('#pollArchiveModal').style.display='none');
+
+  async function openPollArchive(){
+    if(!isAdmin(currentUser))return;
+    $('#pollArchiveModal').style.display='flex';
+    const list=$('#pollArchiveList');
+    list.innerHTML='<div class="pa-empty">Chargement…</div>';
+    try{
+      const {data:polls,error}=await sb.from('polls').select('*').order('created_at',{ascending:false}).limit(50);
+      if(error)throw error;
+      if(!polls || !polls.length){ list.innerHTML='<div class="pa-empty">Aucun sondage pour le moment.</div>'; return; }
+      // charge tous les votes en une fois
+      const ids=polls.map(p=>p.id);
+      const {data:allVotes}=await sb.from('poll_votes').select('*').in('poll_id',ids);
+      const votesByPoll={};
+      (allVotes||[]).forEach(v=>{ (votesByPoll[v.poll_id]=votesByPoll[v.poll_id]||[]).push(v); });
+      list.innerHTML=polls.map(p=>{
+        let opts=[]; try{ opts=Array.isArray(p.options)?p.options:JSON.parse(p.options||'[]'); }catch(e){ opts=[]; }
+        const votes=votesByPoll[p.id]||[];
+        const total=votes.length;
+        const d=new Date(p.created_at).toLocaleDateString('fr-FR')+' '+new Date(p.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+        const optsHtml=opts.map((o,i)=>{
+          const c=votes.filter(v=>v.option_index===i).length;
+          const pct=total?Math.round(c/total*100):0;
+          return `<div class="pa-opt"><div class="pa-opt-top"><span class="pa-opt-label">${escapeHTML(o)}</span><span class="pa-opt-val">${pct}% · ${c}</span></div><div class="pa-bar"><span style="width:${pct}%"></span></div></div>`;
+        }).join('');
+        const voters = total ? '<div class="pa-voters">👁 '+votes.map(v=>escapeHTML(v.username||'?')+'→'+(opts[v.option_index]!==undefined?escapeHTML(opts[v.option_index]):'?')).join(' · ')+'</div>' : '';
+        return `<div class="pa-item">
+          <div class="pa-q">📊 ${escapeHTML(p.question)} ${p.active?'<span style="color:var(--mint);font-size:10px">● EN COURS</span>':''}</div>
+          <div class="pa-date">${d} · ${total} vote(s)</div>
+          ${optsHtml}${voters}</div>`;
+      }).join('');
+    }catch(err){ console.error(err); list.innerHTML='<div class="pa-empty">Impossible de charger (table « polls » ?).</div>'; }
   }
   // Bulle de chat flottante
   $('#chatFab') && $('#chatFab').addEventListener('click',goToChat);
