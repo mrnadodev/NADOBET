@@ -17,7 +17,7 @@
      ║                                                                    ║
      ║  Gardez bien les guillemets "  " autour de chaque valeur.          ║
      ╚══════════════════════════════════════════════════════════════════╝ */
- window.NADOBET_CONFIG = {
+   window.NADOBET_CONFIG = {
 
     SUPABASE_URL: "https://pemcdjrciskqhqfimrxo.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlbWNkanJjaXNrcWhxZmltcnhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MTQwODIsImV4cCI6MjA5OTI5MDA4Mn0.sK1kWiq3EJwW0SdPSTyclqOFB1BjueOZ4ead7kWYfCA",
@@ -31,7 +31,6 @@
     TELEGRAM_BOT_TOKEN: "8995154321:AAE9LxkU9T9t0SuVzermRoGyt2bg3eidNtY",   // ex : "123456:ABC-DEF..."
     TELEGRAM_CHAT_ID:   "@nadobet_surebets"    // ex : "@nadobet_surebets" ou "-1001234567890"
   };
-
 </script>
 <style>
   :root{
@@ -324,19 +323,20 @@
   .admin-users{overflow-y:auto;padding:8px}
   .admin-users-head{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 10px;
     font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
-  .user-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;transition:.15s}
-  .user-row:hover{background:var(--panel-2)}
-  .user-row .u-av{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;
-    font-family:var(--mono);font-weight:700;font-size:12px;background:var(--line);color:var(--ink-dim)}
+  .user-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;transition:.15s;border:1px solid transparent}
+  .user-row:hover{background:var(--panel-2);border-color:var(--line)}
+  .user-row .u-av{width:32px;height:32px;border-radius:8px;flex:none;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:13px;background:var(--line);color:var(--ink-dim)}
   .user-row .u-meta{min-width:0;flex:1}
-  .user-row .u-mail{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .user-row .u-badge{font-size:9.5px;font-family:var(--mono);padding:1px 6px;border-radius:5px;margin-top:2px;display:inline-block}
+  .user-row .u-mail{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .user-row .u-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .user-row .u-badge{font-size:9.5px;font-family:var(--mono);padding:2px 7px;border-radius:5px;display:inline-block}
   .u-badge.approved{background:rgba(47,230,168,.14);color:var(--mint)}
   .u-badge.pending{background:rgba(245,197,66,.14);color:var(--gold)}
   .u-badge.blocked{background:rgba(255,93,108,.14);color:var(--red)}
-  .u-actions{display:flex;gap:5px;flex:none}
+  .u-actions{display:flex;gap:6px;flex-wrap:wrap;width:100%;padding-top:2px}
   .u-btn{background:none;border:1px solid var(--line);border-radius:7px;cursor:pointer;
-    font-size:10.5px;font-weight:700;font-family:var(--sans);padding:5px 8px;transition:.15s;white-space:nowrap}
+    font-size:11px;font-weight:700;font-family:var(--sans);padding:6px 10px;transition:.15s;white-space:nowrap}
   .u-btn.ok{color:var(--mint);border-color:rgba(47,230,168,.3)}
   .u-btn.ok:hover{background:rgba(47,230,168,.12)}
   .u-btn.block{color:var(--red);border-color:rgba(255,93,108,.3)}
@@ -422,6 +422,15 @@
   .chat-compose{display:flex;gap:10px}
   .chat-compose input{flex:1}
   #chatTimerToggle.timer-off{color:var(--gold);border-color:rgba(245,197,66,.4)}
+  .cm-text.surebet-msg{background:linear-gradient(135deg,rgba(47,230,168,.12),rgba(245,197,66,.08));
+    border:1px solid var(--mint-dim);border-radius:9px;padding:10px 12px;font-size:12.5px;line-height:1.6;
+    font-family:var(--mono);white-space:normal}
+  .cm-text.surebet-msg.is-expired{background:rgba(255,93,108,.07);border-color:rgba(255,93,108,.3);opacity:.75}
+  .sb-status{margin-top:8px;padding:5px 9px;border-radius:7px;font-size:11px;font-weight:700;text-align:center;font-family:var(--sans)}
+  .sb-status.pending{background:rgba(245,197,66,.14);color:var(--gold)}
+  .sb-status.valid{background:rgba(47,230,168,.16);color:var(--mint)}
+  .sb-status.expired{background:rgba(255,93,108,.16);color:var(--red)}
+  .cm-act.sb-mark{font-size:13px}
   .chat-msg .cm-actions{display:flex;flex-direction:column;gap:3px;align-self:center;opacity:0;transition:.15s}
   .chat-msg:hover .cm-actions{opacity:1}
   .cm-act{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:5px}
@@ -2401,6 +2410,7 @@
   async function startChat(user){
     if(!sb||chatChannel)return;
     await loadCooldownSetting();
+    cleanupOldMessages(); // efface les messages de plus de 7 jours
     await loadChatMessages();
     chatChannel=sb.channel('nadobet_chat')
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},payload=>{
@@ -2436,6 +2446,14 @@
     if(chatChannel){ try{await sb.removeChannel(chatChannel);}catch(e){} chatChannel=null; }
     chatMsgs=[]; replyTo=null;
   }
+  // Efface les messages de plus de 7 jours (appelé au démarrage)
+  async function cleanupOldMessages(){
+    if(!sb)return;
+    try{
+      const cutoff=new Date(Date.now()-7*24*60*60*1000).toISOString();
+      await sb.from('messages').delete().lt('created_at',cutoff);
+    }catch(err){ /* silencieux : dépend des droits RLS */ }
+  }
   async function loadChatMessages(){
     if(!sb)return;
     try{
@@ -2469,9 +2487,26 @@
       const canDelete = !del && (mod||mine);
       const delBtn=canDelete?`<button class="cm-act" data-del="${m.id}" title="Supprimer">✕</button>`:'';
       const replyBtn=(!del)?`<button class="cm-act" data-reply="${m.id}" title="Répondre">↩</button>`:'';
+      const isSurebet=m.is_surebet;
+      // statut du surebet : null (actif), 'expired' (annulé), 'valid' (encore valide)
+      const sbStatus=m.sb_status;
+      let statusBadge='';
+      if(isSurebet){
+        if(sbStatus==='expired') statusBadge='<div class="sb-status expired">❌ Cotes changées — surebet expiré</div>';
+        else if(sbStatus==='valid') statusBadge='<div class="sb-status valid">✅ Toujours valide</div>';
+        else statusBadge='<div class="sb-status pending">⏳ À vérifier chez le bookmaker</div>';
+      }
       const textHtml = del
         ? `<div class="cm-text deleted">🚫 Message supprimé${mod?' (visible modération)':''}${mod&&m.text?': <span class="cm-orig">'+escapeHTML(m.text)+'</span>':''}</div>`
-        : `<div class="cm-text">${escapeHTML(m.text)}</div>`;
+        : (isSurebet
+            ? `<div class="cm-text surebet-msg ${sbStatus==='expired'?'is-expired':''}">${escapeHTML(m.text).replace(/\n/g,'<br>')}${statusBadge}</div>`
+            : `<div class="cm-text">${escapeHTML(m.text)}</div>`);
+      // Boutons de statut surebet (admin / publisher / modérateur)
+      let sbBtns='';
+      if(isSurebet && !del && (canPublish()||canModerate())){
+        sbBtns=`<button class="cm-act sb-mark" data-sbvalid="${m.id}" title="Marquer encore valide">✅</button>
+                <button class="cm-act sb-mark" data-sbexpired="${m.id}" title="Marquer expiré">❌</button>`;
+      }
       return `<div class="chat-msg ${mine?'mine':''} ${del?'is-deleted':''}">
         <div class="cm-av">${chatInitial(m.email)}</div>
         <div class="cm-body">
@@ -2479,10 +2514,12 @@
           ${replyHtml}
           ${textHtml}
         </div>
-        <div class="cm-actions">${replyBtn}${delBtn}</div>
+        <div class="cm-actions">${sbBtns}${replyBtn}${delBtn}</div>
       </div>`;
     }).join('');
     $$('#chatMessages [data-del]').forEach(b=>b.addEventListener('click',()=>deleteChatMsg(b.dataset.del)));
+    $$('#chatMessages [data-sbvalid]').forEach(b=>b.addEventListener('click',()=>setSurebetStatus(b.dataset.sbvalid,'valid')));
+    $$('#chatMessages [data-sbexpired]').forEach(b=>b.addEventListener('click',()=>setSurebetStatus(b.dataset.sbexpired,'expired')));
     $$('#chatMessages [data-reply]').forEach(b=>b.addEventListener('click',()=>startReply(b.dataset.reply)));
     if(scroll||nearBottom) box.scrollTop=box.scrollHeight;
   }
@@ -2530,12 +2567,26 @@
   function containsLink(text){
     return /(https?:\/\/|www\.|t\.me\/|wa\.me\/|\b[a-z0-9-]+\.(com|net|org|io|co|ht|fr|me|xyz|info|link|app|shop|club|online|site|store|ml|tk|ga)\b)/i.test(text||'');
   }
+  // Retire emojis, symboles picto, GIF collés, etc. Ne garde que texte lisible.
+  function stripEmoji(s){
+    return (s||'')
+      .replace(/[\u{1F000}-\u{1FAFF}\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{1F1E6}-\u{1F1FF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu,'')
+      .replace(/\uFFFD/g,'') // caractère de remplacement (images collées)
+      .replace(/[ \t]{2,}/g,' ')
+      .trim();
+  }
 
   async function sendChatMsg(){
     if(!sb||!currentUser)return;
     const input=$('#chatInput');
-    const text=(input.value||'').trim();
+    let text=(input.value||'').trim();
     if(!text)return;
+    // Texte uniquement : retire emojis, GIF/images collés, symboles
+    const cleaned=stripEmoji(text);
+    if(cleaned!==text){
+      if(!cleaned){ showToast('Seul le texte est autorisé (pas d\u2019emoji ni d\u2019image)',true); input.value=''; return; }
+      text=cleaned;
+    }
     if(text.length>500){ showToast('Message trop long',true); return; }
     // Filtre de liens (sauf admin)
     if(!isAdmin(currentUser) && containsLink(text)){
@@ -2588,6 +2639,14 @@
       try{ await sb.from('messages').update({deleted:true}).eq('id',id); }catch(err){ console.error(err); }
     }
   }
+  // Marque un surebet du chat comme "encore valide" ou "expiré" (admin/publisher/modérateur)
+  async function setSurebetStatus(id,status){
+    if(!sb || !(canPublish()||canModerate()))return;
+    const m=msgById(id); if(!m)return;
+    m.sb_status=status; renderChat(false);
+    try{ await sb.from('messages').update({sb_status:status}).eq('id',id); }
+    catch(err){ console.error(err); showToast('Action impossible',true); }
+  }
   // Nettoyer tout le chat (admin)
   async function clearChat(){
     if(!sb||!isAdmin(currentUser))return;
@@ -2605,6 +2664,22 @@
   // Événements chat
   $('#chatSend').addEventListener('click',sendChatMsg);
   $('#chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChatMsg(); } });
+  // Collage : bloque images/fichiers, force le texte brut sans emoji
+  $('#chatInput').addEventListener('paste',e=>{
+    const cd=e.clipboardData||window.clipboardData; if(!cd)return;
+    // si le presse-papier contient une image/fichier → bloque
+    if(cd.files && cd.files.length){ e.preventDefault(); showToast('Images non autorisées dans le chat',true); return; }
+    const items=cd.items;
+    if(items){ for(const it of items){ if(it.kind==='file'){ e.preventDefault(); showToast('Images non autorisées dans le chat',true); return; } } }
+    // colle le texte nettoyé (sans emoji)
+    e.preventDefault();
+    const raw=cd.getData('text/plain')||'';
+    const clean=stripEmoji(raw);
+    const el=e.target;
+    const start=el.selectionStart, end=el.selectionEnd;
+    el.value=el.value.slice(0,start)+clean+el.value.slice(end);
+    el.selectionStart=el.selectionEnd=start+clean.length;
+  });
   $('#chatReplyCancel') && $('#chatReplyCancel').addEventListener('click',cancelReply);
   $('#chatClear') && $('#chatClear').addEventListener('click',clearChat);
 
@@ -2842,8 +2917,28 @@
       if(error)throw error;
       showToast('Surebet publié ✓');
       notifyTelegram();  // alerte Telegram (sans les détails)
+      postSurebetToChat(title, roi, legs, note); // archive dans le salon Surebets
       closePublish();
     }catch(err){ console.error(err); showToast('Échec de la publication',true); }
+  }
+
+  // Poste le surebet comme message spécial dans le salon "Surebets" (archive de la semaine)
+  async function postSurebetToChat(title, roi, legs, note){
+    if(!sb||!currentUser)return;
+    const now=new Date();
+    const dateStr=now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    let txt='🎯 SUREBET · '+title+'\n';
+    if(roi) txt+='ROI garanti : +'+Number(roi).toFixed(2)+'%\n';
+    legs.forEach((l,i)=>{
+      if(l.match||l.odd){ txt+='• '+(l.match||'Issue '+(i+1))+' — '+(l.bk||'?')+' @ '+(l.odd||'?')+'\n'; }
+    });
+    if(note) txt+='📝 '+note+'\n';
+    txt+='🕒 '+dateStr;
+    try{
+      await sb.from('messages').insert({
+        user_id:currentUser.id, email:currentUser.email, text:txt, room:'surebets', is_surebet:true
+      });
+    }catch(err){ console.error('post surebet chat:',err); }
   }
 
   // Envoie une alerte générique dans le canal Telegram (pas de détails du surebet)
@@ -3086,7 +3181,7 @@
       return `<div class="user-row">
         <div class="u-av">${initial}</div>
         <div class="u-meta"><div class="u-mail">${u.email||'(sans email)'}</div>
-          <span class="u-badge ${st}">${labels[st]||st}</span>${roleBadge}</div>
+          <div class="u-badges"><span class="u-badge ${st}">${labels[st]||st}</span>${roleBadge}</div></div>
         <div class="u-actions">${actions}</div>
       </div>`;
     }).join('');
